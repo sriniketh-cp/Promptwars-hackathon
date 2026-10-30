@@ -1,0 +1,7 @@
+{
+  "name": "Festivo AI",
+  "description": "Plan smarter. Celebrate better. An intelligent celebration and adaptive event-planning platform powered by Generative AI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

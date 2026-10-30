@@ -1,0 +1,31 @@
+import React from 'react';
+import { Sparkles, Info } from 'lucide-react';
+
+interface SimulationBadgeProps {
+  isSimulated?: boolean;
+  className?: string;
+}
+
+export const SimulationBadge: React.FC<SimulationBadgeProps> = ({ isSimulated, className = '' }) => {
+  if (isSimulated) {
+    return (
+      <span
+        title="Running in high-fidelity deterministic demo simulation mode"
+        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-[#FFF7E8] text-[#9A6700] border border-[#F0D597] ${className}`}
+      >
+        <Info className="w-3.5 h-3.5 shrink-0" />
+        <span>Demo Simulation</span>
+      </span>
+    );
+  }
+
+  return (
+    <span
+      title="Live inference generated via Gemini 3.8 Flash server-side integration"
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-[#F3EBF4] text-[#4A1D45] border border-[#D8C2D5] ${className}`}
+    >
+      <Sparkles className="w-3.5 h-3.5 text-[#E0533C] shrink-0" />
+      <span>Gemini 3.8 Flash</span>
+    </span>
+  );
+};
