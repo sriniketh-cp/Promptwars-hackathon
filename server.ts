@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI, Type } from '@google/genai';
 import { SAMPLE_BIRTHDAY_EVENT } from './src/data/initialData';
@@ -13,8 +14,13 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
-const DATA_DIR = process.env.VERCEL ? path.join('/tmp', 'data') : path.join(__dirname, 'data');
+const DATA_DIR = process.env.VERCEL
+  ? path.join(os.tmpdir(), 'festivo-data')
+  : path.join(__dirname, 'data');
 const EVENTS_FILE = path.join(DATA_DIR, 'events.json');
+
+// In-memory store ensures API never crashes even if filesystem is read-only
+let memoryEvents: FestivoEvent[] = [SAMPLE_BIRTHDAY_EVENT];
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -26,47 +32,37 @@ app.use((req, res, next) => {
   next();
 });
 
-// Ensure data directory and default events file exist
+// Ensure data directory exists
 try {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
 } catch (err) {
-  console.warn('Could not create data directory:', err);
+  // Non-fatal in serverless environments
 }
 
 function loadEvents(): FestivoEvent[] {
   try {
     if (fs.existsSync(EVENTS_FILE)) {
       const data = fs.readFileSync(EVENTS_FILE, 'utf-8');
-      return JSON.parse(data);
-    }
-    const bundledFile = path.join(__dirname, 'data', 'events.json');
-    if (fs.existsSync(bundledFile)) {
-      const data = fs.readFileSync(bundledFile, 'utf-8');
       const parsed = JSON.parse(data);
-      try {
-        fs.writeFileSync(EVENTS_FILE, JSON.stringify(parsed, null, 2), 'utf-8');
-      } catch {}
-      return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memoryEvents = parsed;
+        return memoryEvents;
+      }
     }
   } catch (err) {
-    console.error('Error reading events file, resetting to sample event:', err);
+    // Fall back to in-memory events
   }
-  const initial = [SAMPLE_BIRTHDAY_EVENT];
-  try {
-    fs.writeFileSync(EVENTS_FILE, JSON.stringify(initial, null, 2), 'utf-8');
-  } catch (err) {
-    console.warn('Could not write initial events file:', err);
-  }
-  return initial;
+  return memoryEvents;
 }
 
 function saveEvents(events: FestivoEvent[]) {
+  memoryEvents = events;
   try {
     fs.writeFileSync(EVENTS_FILE, JSON.stringify(events, null, 2), 'utf-8');
   } catch (err) {
-    console.error('Error saving events file:', err);
+    // Non-fatal on serverless read-only filesystems
   }
 }
 
