@@ -600,6 +600,33 @@ app.get("/api/health", (req, res) => {
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
 });
+app.get("/api/test-gemini", async (req, res) => {
+  const rawKey = process.env.GEMINI_API_KEY;
+  if (!aiClient) {
+    return res.json({
+      success: false,
+      reason: "aiClient is null",
+      apiKeyPresent: !!rawKey,
+      apiKeyValue: rawKey ? rawKey.substring(0, 8) + "..." : "MISSING"
+    });
+  }
+  const errors = [];
+  for (const model of ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]) {
+    try {
+      const resp = await Promise.race([
+        aiClient.models.generateContent({ model, contents: "Reply with: OK" }),
+        new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 1e4))
+      ]);
+      if (resp && resp.text) {
+        return res.json({ success: true, model, response: resp.text.trim() });
+      }
+      errors.push(`${model}: empty response`);
+    } catch (e) {
+      errors.push(`${model}: ${e?.message}`);
+    }
+  }
+  return res.json({ success: false, errors });
+});
 app.get("/api/events", (req, res) => {
   const events = loadEvents();
   res.json(events);
