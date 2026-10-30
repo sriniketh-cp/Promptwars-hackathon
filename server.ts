@@ -72,15 +72,8 @@ let aiClient: GoogleGenAI | null = null;
 
 if (apiKey && apiKey !== 'MY_GEMINI_API_KEY' && apiKey.trim() !== '') {
   try {
-    aiClient = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        },
-      },
-    });
-    console.log('Gemini GenAI client initialized successfully with User-Agent: aistudio-build');
+    aiClient = new GoogleGenAI({ apiKey });
+    console.log('Gemini GenAI client initialized successfully.');
   } catch (e) {
     console.error('Failed to initialize GoogleGenAI client:', e);
   }
@@ -100,10 +93,10 @@ async function callGeminiWithRetry(params: {
 
   // Real fast Gemini models with graceful fallbacks
   const candidateModels = [
+    'gemini-3.8-flash',
     'gemini-2.5-flash',
     'gemini-2.0-flash',
     'gemini-1.5-flash',
-    'gemini-2.5-flash-lite',
   ];
 
   for (const model of candidateModels) {
@@ -138,9 +131,13 @@ async function callGeminiWithRetry(params: {
 
 // Health and capability status
 app.get('/api/health', (req: Request, res: Response) => {
+  const rawKey = process.env.GEMINI_API_KEY;
+  const isKeyConfigured = !!(rawKey && rawKey !== 'MY_GEMINI_API_KEY' && rawKey.trim() !== '');
   res.json({
     status: 'ok',
     hasApiKey: !!aiClient,
+    apiKeyConfigured: isKeyConfigured,
+    apiKeyPrefix: isKeyConfigured ? rawKey.substring(0, 6) + '...' : 'none',
     model: 'gemini-3.8-flash',
     timestamp: new Date().toISOString(),
   });
