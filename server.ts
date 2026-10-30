@@ -13,14 +13,26 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.VERCEL ? path.join('/tmp', 'data') : path.join(__dirname, 'data');
 const EVENTS_FILE = path.join(DATA_DIR, 'events.json');
 
 app.use(express.json({ limit: '10mb' }));
 
+// Normalize URL in case Vercel rewrites strip /api prefix
+app.use((req, res, next) => {
+  if (!req.url.startsWith('/api')) {
+    req.url = '/api' + req.url;
+  }
+  next();
+});
+
 // Ensure data directory and default events file exist
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (err) {
+  console.warn('Could not create data directory:', err);
 }
 
 function loadEvents(): FestivoEvent[] {
@@ -29,11 +41,24 @@ function loadEvents(): FestivoEvent[] {
       const data = fs.readFileSync(EVENTS_FILE, 'utf-8');
       return JSON.parse(data);
     }
+    const bundledFile = path.join(__dirname, 'data', 'events.json');
+    if (fs.existsSync(bundledFile)) {
+      const data = fs.readFileSync(bundledFile, 'utf-8');
+      const parsed = JSON.parse(data);
+      try {
+        fs.writeFileSync(EVENTS_FILE, JSON.stringify(parsed, null, 2), 'utf-8');
+      } catch {}
+      return parsed;
+    }
   } catch (err) {
     console.error('Error reading events file, resetting to sample event:', err);
   }
   const initial = [SAMPLE_BIRTHDAY_EVENT];
-  fs.writeFileSync(EVENTS_FILE, JSON.stringify(initial, null, 2), 'utf-8');
+  try {
+    fs.writeFileSync(EVENTS_FILE, JSON.stringify(initial, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Could not write initial events file:', err);
+  }
   return initial;
 }
 
@@ -966,6 +991,10 @@ async function startServer() {
   });
 }
 
-startServer().catch((err) => {
-  console.error('Fatal error starting server:', err);
-});
+if (!process.env.VERCEL) {
+  startServer().catch((err) => {
+    console.error('Fatal error starting server:', err);
+  });
+}
+
+export default app;
