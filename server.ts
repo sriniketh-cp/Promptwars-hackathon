@@ -98,28 +98,36 @@ async function callGeminiWithRetry(params: {
 }): Promise<{ text: string; modelUsed: string } | null> {
   if (!aiClient) return null;
 
-  // Primary model is gemini-3.8-flash; if experiencing high demand, fallback to gemini-flash-latest
-  const candidateModels = ['gemini-3.8-flash', 'gemini-flash-latest'];
+  // Real fast Gemini models with graceful fallbacks
+  const candidateModels = [
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-2.5-flash-lite',
+  ];
 
   for (const model of candidateModels) {
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        const response = await aiClient.models.generateContent({
-          model,
-          contents: params.contents,
-          config: params.config,
-        });
+    try {
+      // Race against an 8s timeout to prevent serverless function termination
+      const responsePromise = aiClient.models.generateContent({
+        model,
+        contents: params.contents,
+        config: params.config,
+      });
 
-        if (response && response.text) {
-          return { text: response.text, modelUsed: model };
-        }
-      } catch (err: any) {
-        console.warn(`[Gemini Attempt ${attempt} on ${model}]:`, err?.message || err);
-        if (attempt < 3) {
-          // Wait 600ms, 1200ms
-          await new Promise((resolve) => setTimeout(resolve, attempt * 600));
-        }
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Gemini call timed out after 8s')), 8000)
+      );
+
+      const response = await Promise.race([responsePromise, timeoutPromise]);
+
+      if (response && response.text) {
+        return { text: response.text, modelUsed: model };
       }
+    } catch (err: any) {
+      console.warn(`[Gemini error on ${model}]:`, err?.message || err);
+      // Immediately try next model without sleeping to stay well within serverless limits
+      continue;
     }
   }
 
@@ -543,7 +551,7 @@ New / Proposed Requirements:
 - Reason stated by user: "${triggerReason || 'Requirements revision'}"
 
 Current Budget Categories:
-${JSON.stringify(currentEvent.budgetCategories.map((c: any) => ({
+${JSON.stringify((currentEvent.budgetCategories || []).map((c: any) => ({
   name: c.name,
   allocated: c.allocatedAmount,
   confirmed: c.confirmedQuote,
@@ -551,7 +559,7 @@ ${JSON.stringify(currentEvent.budgetCategories.map((c: any) => ({
 })), null, 2)}
 
 Current Tasks:
-${JSON.stringify(currentEvent.tasks.map((t: any) => ({
+${JSON.stringify((currentEvent.tasks || []).map((t: any) => ({
   id: t.id,
   title: t.title,
   dueDate: t.dueDate,

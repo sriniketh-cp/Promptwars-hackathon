@@ -568,24 +568,29 @@ if (apiKey && apiKey !== "MY_GEMINI_API_KEY" && apiKey.trim() !== "") {
 }
 async function callGeminiWithRetry(params) {
   if (!aiClient) return null;
-  const candidateModels = ["gemini-3.8-flash", "gemini-flash-latest"];
+  const candidateModels = [
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+    "gemini-2.5-flash-lite"
+  ];
   for (const model of candidateModels) {
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        const response = await aiClient.models.generateContent({
-          model,
-          contents: params.contents,
-          config: params.config
-        });
-        if (response && response.text) {
-          return { text: response.text, modelUsed: model };
-        }
-      } catch (err) {
-        console.warn(`[Gemini Attempt ${attempt} on ${model}]:`, err?.message || err);
-        if (attempt < 3) {
-          await new Promise((resolve) => setTimeout(resolve, attempt * 600));
-        }
+    try {
+      const responsePromise = aiClient.models.generateContent({
+        model,
+        contents: params.contents,
+        config: params.config
+      });
+      const timeoutPromise = new Promise(
+        (_, reject) => setTimeout(() => reject(new Error("Gemini call timed out after 8s")), 8e3)
+      );
+      const response = await Promise.race([responsePromise, timeoutPromise]);
+      if (response && response.text) {
+        return { text: response.text, modelUsed: model };
       }
+    } catch (err) {
+      console.warn(`[Gemini error on ${model}]:`, err?.message || err);
+      continue;
     }
   }
   return null;
@@ -964,7 +969,7 @@ New / Proposed Requirements:
 - Reason stated by user: "${triggerReason || "Requirements revision"}"
 
 Current Budget Categories:
-${JSON.stringify(currentEvent.budgetCategories.map((c) => ({
+${JSON.stringify((currentEvent.budgetCategories || []).map((c) => ({
     name: c.name,
     allocated: c.allocatedAmount,
     confirmed: c.confirmedQuote,
@@ -972,7 +977,7 @@ ${JSON.stringify(currentEvent.budgetCategories.map((c) => ({
   })), null, 2)}
 
 Current Tasks:
-${JSON.stringify(currentEvent.tasks.map((t) => ({
+${JSON.stringify((currentEvent.tasks || []).map((t) => ({
     id: t.id,
     title: t.title,
     dueDate: t.dueDate,
