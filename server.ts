@@ -148,22 +148,20 @@ app.get('/api/test-gemini', async (req: Request, res: Response) => {
       apiKeyValue: rawKey ? rawKey.substring(0, 8) + '...' : 'MISSING',
     });
   }
-  const errors: string[] = [];
-  for (const model of ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']) {
-    try {
-      const resp = await Promise.race([
-        aiClient.models.generateContent({ model, contents: 'Reply with: OK' }),
-        new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000)),
-      ]);
-      if (resp && resp.text) {
-        return res.json({ success: true, model, response: resp.text.trim() });
-      }
-      errors.push(`${model}: empty response`);
-    } catch (e: any) {
-      errors.push(`${model}: ${e?.message}`);
+  // Use the same model and timeout as callGeminiWithRetry
+  const model = 'gemini-3.8-flash';
+  try {
+    const resp = await Promise.race([
+      aiClient.models.generateContent({ model, contents: 'Reply with exactly: OK' }),
+      new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout after 25s')), 25000)),
+    ]);
+    if (resp && resp.text) {
+      return res.json({ success: true, model, response: resp.text.trim() });
     }
+    return res.json({ success: false, model, reason: 'empty response from Gemini' });
+  } catch (e: any) {
+    return res.json({ success: false, model, error: e?.message || String(e) });
   }
-  return res.json({ success: false, errors });
 });
 
 // List all events
