@@ -92,12 +92,7 @@ async function callGeminiWithRetry(params: {
   if (!aiClient) return null;
 
   // Real fast Gemini models with graceful fallbacks
-  const candidateModels = [
-    'gemini-3.8-flash',
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-  ];
+  const candidateModels = ['gemini-3.8-flash'];
 
   for (const model of candidateModels) {
     try {
@@ -109,7 +104,7 @@ async function callGeminiWithRetry(params: {
       });
 
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Gemini call timed out after 8s')), 8000)
+        setTimeout(() => reject(new Error('Gemini call timed out after 25s')), 25000)
       );
 
       const response = await Promise.race([responsePromise, timeoutPromise]);

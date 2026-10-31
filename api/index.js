@@ -561,12 +561,7 @@ if (apiKey && apiKey !== "MY_GEMINI_API_KEY" && apiKey.trim() !== "") {
 }
 async function callGeminiWithRetry(params) {
   if (!aiClient) return null;
-  const candidateModels = [
-    "gemini-3.8-flash",
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash"
-  ];
+  const candidateModels = ["gemini-3.8-flash"];
   for (const model of candidateModels) {
     try {
       const responsePromise = aiClient.models.generateContent({
@@ -575,7 +570,7 @@ async function callGeminiWithRetry(params) {
         config: params.config
       });
       const timeoutPromise = new Promise(
-        (_, reject) => setTimeout(() => reject(new Error("Gemini call timed out after 8s")), 8e3)
+        (_, reject) => setTimeout(() => reject(new Error("Gemini call timed out after 25s")), 25e3)
       );
       const response = await Promise.race([responsePromise, timeoutPromise]);
       if (response && response.text) {
