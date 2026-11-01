@@ -9,7 +9,7 @@ This document records the automated tests executed, testing methodology, and bui
 - **Test Runner:** Custom automated test harness via `tsx tests/unit_tests.ts`
 - **Execution Command:** `npm test`
 - **Execution Date:** October 30, 2026
-- **Test Result:** **26 / 26 Tests Passed (0 Failed, 100% Pass Rate)**
+- **Test Result:** **72 / 72 Tests Passed (0 Failed, 100% Pass Rate)**
 
 ```
 ======================================================
@@ -78,7 +78,7 @@ The following complete user journeys were verified end-to-end:
 1. **Event Creation:** Multi-step wizard submits requirements and renders an interactive 13-section blueprint.
 2. **Budget Ledger:** Displays category allocations, locked quotes, and actual expenses with zero rounding errors.
 3. **Budget Reduction Demonstration:** Reduces ₹2,00,000 to ₹1,50,000, preserves fixed venue commitments, and presents selectable line-item trade-offs.
-4. **Adaptive Intelligence ("What Changed?"):** Simulates 120 pax @ ₹2,00,000 → 160 pax @ ₹1,70,000, proposes food format shift, and creates a restorable snapshot upon approval.
+4. **Adaptive Intelligence ("What Changed?"):** Simulates 120 pax @ ₹2,00,000 → 160 pax @ ₹1,50,000, proposes food format shift, and creates a restorable snapshot upon approval.
 5. **Vendor Quote Comparison:** Renders side-by-side packages and detects hidden garbage/overtime fees.
 6. **Guest & Task Management:** RSVP tracking, dietary filters, CSV import/export, and deadline shifting.
 7. **Report Printing:** Clean, border-disciplined print view without UI chrome.

@@ -34,7 +34,8 @@ export function sanitizeNumericAmount(
   if (value === undefined || value === null || value === '') return fallback;
   const num = typeof value === 'number' ? value : Number(value);
   if (isNaN(num) || !isFinite(num)) return fallback;
-  return Math.min(Math.max(Math.round(num), min), max);
+  if (num < min || num > max) return fallback;
+  return Math.round(num);
 }
 
 /**

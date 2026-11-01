@@ -386,13 +386,13 @@ const imgPayload = '<img src="x" onerror="alert(1)"/>Gala Event';
 const sanitizedImg = sanitizeInput(imgPayload);
 assert(!sanitizedImg.includes('<img'), 'Strips HTML image injection');
 
-const safeNumericBudget = sanitizeNumericAmount(150000, 100, 10000000, 150000);
+const safeNumericBudget = sanitizeNumericAmount(150000, 150000, 100, 10000000);
 assert(safeNumericBudget === 150000, 'Valid numeric budget within bounds is accepted');
 
-const clampedNegativeBudget = sanitizeNumericAmount(-50000, 100, 10000000, 150000);
+const clampedNegativeBudget = sanitizeNumericAmount(-50000, 150000, 100, 10000000);
 assert(clampedNegativeBudget === 150000, 'Negative budget is clamped to default fallback amount');
 
-const nanBudget = sanitizeNumericAmount(NaN, 100, 10000000, 150000);
+const nanBudget = sanitizeNumericAmount(NaN, 150000, 100, 10000000);
 assert(nanBudget === 150000, 'NaN input defaults safely to fallback amount');
 
 console.log('\n======================================================');

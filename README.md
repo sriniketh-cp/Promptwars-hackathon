@@ -45,8 +45,8 @@ Festivo AI provides an end-to-end event planning workspace supporting birthdays,
 
 ### 4. Adaptive Event Intelligence — "What Changed?" (Feature Three - Signature Feature)
 - Models dynamic changes in guest count, budget, date, venue, or theme.
-- **Example Scenario Tested:** 120 guests @ ₹2,00,000 → 160 guests @ ₹1,70,000 outdoor.
-- Analyzes the inverse pressure of more guests with less money (per-head budget drops from ₹1,667 to ₹1,063).
+- **Example Scenario Tested:** 120 guests @ ₹2,00,000 → 160 guests @ ₹1,50,000 outdoor.
+- Analyzes the inverse pressure of more guests with less money (per-head budget drops from ₹1,667 to ₹938, a reduction of -₹729/guest).
 - Proposes structured adjustments: catering menu format shift, decor refocusing, task rescheduling, and crowd-density risk mitigation.
 - **Revision Control & Restore:** Never silently overwrites plans. Stores immutable snapshots with reasons and timestamps, allowing instant one-click restoration.
 

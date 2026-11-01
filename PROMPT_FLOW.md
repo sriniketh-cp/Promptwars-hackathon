@@ -54,13 +54,13 @@ All generation uses **`gemini-3.8-flash`** via the modern `@google/genai` TypeSc
 ## 4. Prompt Flow 3: Adaptive Event Intelligence ("What Changed?")
 
 ### Endpoint: `POST /api/gemini/adaptive-intelligence`
-- **Goal:** The signature feature analyzing simultaneous requirement changes (e.g., 120 guests @ ₹2,00,000 → 160 guests @ ₹1,70,000 outdoor).
+- **Goal:** The signature feature analyzing simultaneous requirement changes (e.g., 120 guests @ ₹2,00,000 → 160 guests @ ₹1,50,000 outdoor).
 - **Prompt Structure:**
   - Original Plan: Requirements, Budget categories, Current Tasks.
   - Updated Plan: New guest count, budget, date, venue.
   - User's stated reason.
 - **Directives:**
-  - Explicitly identify the per-head budget compression ($₹1,667 \rightarrow ₹1,063$).
+  - Explicitly identify the per-head budget compression ($₹1,667 \rightarrow ₹938$).
   - Distinguish fixed infrastructure from variable food/plate/seating costs.
   - Flag operational bottlenecks (buffet congestion with 160 guests on a lawn).
   - Return actionable items with boolean approval flags so the user can accept or reject individual recommendations.
