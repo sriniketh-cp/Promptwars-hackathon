@@ -27,14 +27,13 @@ export function sanitizeInput(input: string | undefined | null): string {
  */
 export function sanitizeNumericAmount(
   value: unknown,
+  fallback: number = 0,
   min: number = 0,
-  max: number = 100_000_000,
-  fallback: number = min
+  max: number = 100_000_000
 ): number {
   if (value === undefined || value === null || value === '') return fallback;
   const num = typeof value === 'number' ? value : Number(value);
   if (isNaN(num) || !isFinite(num)) return fallback;
-  if (num < min) return fallback;
   return Math.min(Math.max(Math.round(num), min), max);
 }
 
@@ -66,3 +65,4 @@ export function sanitizeEventPayload<T extends Record<string, unknown>>(data: T)
 
   return sanitized as T;
 }
+
