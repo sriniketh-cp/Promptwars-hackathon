@@ -563,11 +563,18 @@ async function callGeminiWithRetry(params) {
   if (!aiClient) return null;
   const candidateModels = [
     "gemini-3.8-flash",
-    "gemini-3.8-flash-lite",
-    "gemini-3.6-flash",
-    "gemini-3.8-pro"
+    "gemini-3.8-flash-lite"
   ];
+  const startTime = Date.now();
+  const MAX_TOTAL_MS = 6e3;
   for (const model of candidateModels) {
+    const elapsed = Date.now() - startTime;
+    const remainingTime = MAX_TOTAL_MS - elapsed;
+    if (remainingTime < 1500) {
+      console.warn("[Gemini]: Time window depleted, engaging deterministic simulation fallback.");
+      break;
+    }
+    const perCallTimeout = Math.min(remainingTime - 400, model === "gemini-3.8-flash" ? 4500 : 2e3);
     try {
       const responsePromise = aiClient.models.generateContent({
         model,
@@ -575,14 +582,19 @@ async function callGeminiWithRetry(params) {
         config: params.config
       });
       const timeoutPromise = new Promise(
-        (_, reject) => setTimeout(() => reject(new Error("Gemini call timed out after 25s")), 25e3)
+        (_, reject) => setTimeout(() => reject(new Error(`Gemini call timed out after ${perCallTimeout}ms`)), perCallTimeout)
       );
       const response = await Promise.race([responsePromise, timeoutPromise]);
       if (response && response.text) {
         return { text: response.text, modelUsed: model };
       }
     } catch (err) {
-      console.warn(`[Gemini error on ${model}]:`, err?.message || err);
+      const msg = String(err?.message || err);
+      console.warn(`[Gemini error on ${model}]:`, msg);
+      if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota") || msg.includes("Quota") || msg.includes("rate-limit")) {
+        console.warn("[Gemini]: Quota exceeded on API key. Transitioning immediately to simulation fallback.");
+        break;
+      }
       continue;
     }
   }
