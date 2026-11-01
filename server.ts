@@ -129,9 +129,15 @@ async function callGeminiWithRetry(params: {
 
       const response = await Promise.race([responsePromise, timeoutPromise]);
 
-      if (response && response.text) {
-        lastGeminiError = null;
-        return { text: response.text, modelUsed: model };
+      if (response) {
+        const text = response.text || (response as any).candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          lastGeminiError = null;
+          return { text, modelUsed: model };
+        } else {
+          lastGeminiError = `Response returned from ${model} but contained empty text`;
+          console.warn(`[Gemini empty response on ${model}]`, JSON.stringify(response));
+        }
       }
     } catch (err: any) {
       const msg = String(err?.message || err);
@@ -170,9 +176,40 @@ app.get('/api/health', (req: Request, res: Response) => {
     apiKeyConfigured: isKeyConfigured,
     apiKeyPrefix: isKeyConfigured ? rawKey.substring(0, 6) + '...' : 'none',
     model: 'gemini-3.6-flash',
+    lastError: lastGeminiError,
     timestamp: new Date().toISOString(),
   });
 });
+// Direct live test endpoint for gemini-3.6-flash
+app.get('/api/debug-gemini', async (req: Request, res: Response) => {
+  const start = Date.now();
+  if (!aiClient) {
+    return res.json({ success: false, reason: 'aiClient is null - GEMINI_API_KEY is not set or invalid' });
+  }
+
+  try {
+    const resp = await aiClient.models.generateContent({
+      model: 'gemini-3.6-flash',
+      contents: 'Respond with exactly: Festivo AI Gemini 3.6 Flash is live and working!',
+    });
+    const text = resp?.text || (resp as any)?.candidates?.[0]?.content?.parts?.[0]?.text;
+    return res.json({
+      success: !!text,
+      model: 'gemini-3.6-flash',
+      text,
+      latencyMs: Date.now() - start,
+    });
+  } catch (err: any) {
+    return res.json({
+      success: false,
+      model: 'gemini-3.6-flash',
+      error: err?.message || String(err),
+      status: err?.status,
+      latencyMs: Date.now() - start,
+    });
+  }
+});
+
 // Diagnostic test endpoint — tests all available Gemini models
 app.get('/api/test-gemini', async (req: Request, res: Response) => {
   const rawKey = process.env.GEMINI_API_KEY;
@@ -1012,9 +1049,6 @@ Directives:
 
   const geminiResult = await callGeminiWithRetry({
     contents: contextPrompt,
-    config: {
-      systemInstruction: 'You are Festivo AI Copilot. Always reference real event figures with warmth and precision.',
-    },
   });
 
   if (geminiResult) {

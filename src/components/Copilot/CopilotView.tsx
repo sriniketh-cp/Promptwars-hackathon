@@ -164,7 +164,7 @@ export const CopilotView: React.FC<CopilotViewProps> = ({
                   {!isUser && (
                     <div className="pt-2 border-t border-[#E5DDD2]/50 flex items-center justify-between text-[10px] text-[#8C7A83]">
                       <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      <SimulationBadge isSimulated={msg.isSimulated} />
+                      <SimulationBadge isSimulated={msg.isSimulated} reason={msg.fallbackReason} />
                     </div>
                   )}
 

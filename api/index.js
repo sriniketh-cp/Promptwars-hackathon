@@ -590,9 +590,15 @@ async function callGeminiWithRetry(params) {
         (_, reject) => setTimeout(() => reject(new Error(`Gemini call timed out after ${perCallTimeout}ms`)), perCallTimeout)
       );
       const response = await Promise.race([responsePromise, timeoutPromise]);
-      if (response && response.text) {
-        lastGeminiError = null;
-        return { text: response.text, modelUsed: model };
+      if (response) {
+        const text = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          lastGeminiError = null;
+          return { text, modelUsed: model };
+        } else {
+          lastGeminiError = `Response returned from ${model} but contained empty text`;
+          console.warn(`[Gemini empty response on ${model}]`, JSON.stringify(response));
+        }
       }
     } catch (err) {
       const msg = String(err?.message || err);
@@ -617,8 +623,36 @@ app.get("/api/health", (req, res) => {
     apiKeyConfigured: isKeyConfigured,
     apiKeyPrefix: isKeyConfigured ? rawKey.substring(0, 6) + "..." : "none",
     model: "gemini-3.6-flash",
+    lastError: lastGeminiError,
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
+});
+app.get("/api/debug-gemini", async (req, res) => {
+  const start = Date.now();
+  if (!aiClient) {
+    return res.json({ success: false, reason: "aiClient is null - GEMINI_API_KEY is not set or invalid" });
+  }
+  try {
+    const resp = await aiClient.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: "Respond with exactly: Festivo AI Gemini 3.6 Flash is live and working!"
+    });
+    const text = resp?.text || resp?.candidates?.[0]?.content?.parts?.[0]?.text;
+    return res.json({
+      success: !!text,
+      model: "gemini-3.6-flash",
+      text,
+      latencyMs: Date.now() - start
+    });
+  } catch (err) {
+    return res.json({
+      success: false,
+      model: "gemini-3.6-flash",
+      error: err?.message || String(err),
+      status: err?.status,
+      latencyMs: Date.now() - start
+    });
+  }
 });
 app.get("/api/test-gemini", async (req, res) => {
   const rawKey = process.env.GEMINI_API_KEY;
@@ -1393,10 +1427,7 @@ Directives:
 5. Be concise, warm, professional, and actionable.
 `;
   const geminiResult = await callGeminiWithRetry({
-    contents: contextPrompt,
-    config: {
-      systemInstruction: "You are Festivo AI Copilot. Always reference real event figures with warmth and precision."
-    }
+    contents: contextPrompt
   });
   if (geminiResult) {
     return res.json({
