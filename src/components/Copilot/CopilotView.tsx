@@ -240,17 +240,20 @@ export const CopilotView: React.FC<CopilotViewProps> = ({
         className="p-4 border-t border-[#E5DDD2] bg-white flex items-center gap-2"
       >
         <input
+          id="copilot-query-input"
+          aria-label={`Ask about ${req.name}'s budget, vendors, timeline, or contingencies`}
           type="text"
           value={inputQuery}
           onChange={(e) => setInputQuery(e.target.value)}
           placeholder={`Ask about ${req.name}'s budget, vendors, timeline, or contingencies...`}
-          className="flex-1 text-xs bg-[#FAF7F2] border border-[#DDD3C5] rounded-xl px-4 py-3 text-[#2D112C] focus:outline-none focus:ring-1 focus:ring-[#2D112C]"
+          className="flex-1 text-xs bg-[#FAF7F2] border border-[#DDD3C5] rounded-xl px-4 py-3 text-[#2D112C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
         />
         <button
           type="submit"
           disabled={!inputQuery.trim() || isLoading}
           className="p-3 rounded-xl bg-[#2D112C] text-white hover:bg-[#3D183B] disabled:opacity-40 transition-colors shadow-2xs"
           title="Send query"
+          aria-label="Send query to Copilot"
         >
           <Send className="w-4 h-4 text-[#F97356]" />
         </button>

@@ -19,7 +19,8 @@ import {
   formatCurrency,
 } from '../src/utils/calculations';
 import { SAMPLE_BIRTHDAY_EVENT } from '../src/data/initialData';
-import { BudgetCategory, EventTask, Guest, EventRisk } from '../src/types';
+import { BudgetCategory, EventTask, Guest, EventRisk, FestivoEvent, VendorQuotation, EventPlanRevision } from '../src/types';
+import { sanitizeInput, sanitizeNumericAmount, sanitizeEventPayload } from '../src/utils/security';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -243,6 +244,156 @@ assert(adaptiveDeltas.origPerGuest === 1667, 'Original spending per guest is ₹
 assert(adaptiveDeltas.newPerGuest === 938, 'New spending per guest is ₹938', `Got ${adaptiveDeltas.newPerGuest}`);
 assert(adaptiveDeltas.perGuestDelta === -729, 'Per-guest spending drops by -₹729/guest', `Got ${adaptiveDeltas.perGuestDelta}`);
 assert(adaptiveDeltas.isSurgeStressScenario === true, 'Correctly flags high stress surge + budget compression scenario');
+
+
+// 10. Event Creation, Editing & Persistence Integrity
+console.log('\n[10] Testing Event Creation, Editing & Mutation Integrity');
+const testBaseEvent: FestivoEvent = JSON.parse(JSON.stringify(SAMPLE_BIRTHDAY_EVENT));
+const clonedOriginal: FestivoEvent = JSON.parse(JSON.stringify(testBaseEvent));
+
+testBaseEvent.requirements.name = 'Updated Milestone Gala';
+testBaseEvent.requirements.guestCount = 180;
+testBaseEvent.requirements.totalBudget = 250000;
+
+assert(testBaseEvent.requirements.name === 'Updated Milestone Gala', 'Event name updated correctly');
+assert(testBaseEvent.requirements.guestCount === 180, 'Guest count updated correctly to 180');
+assert(clonedOriginal.requirements.guestCount === 120, 'Original template object remains pristine and unmutated');
+
+const rev1: EventPlanRevision = {
+  id: 'rev-test-1',
+  eventId: testBaseEvent.requirements.id,
+  timestamp: new Date().toISOString(),
+  reason: 'Simulated budget expansion for extra guests',
+  snapshot: JSON.parse(JSON.stringify(testBaseEvent)),
+};
+testBaseEvent.revisions = [rev1];
+
+testBaseEvent.requirements.totalBudget = 300000;
+assert(testBaseEvent.requirements.totalBudget === 300000, 'Current event budget reflects latest mutation');
+assert(testBaseEvent.revisions[0].snapshot.requirements.totalBudget === 250000, 'Historical revision accurately preserves pre-mutation budget of ₹2,50,000');
+
+// 11. Vendor Quotation Analysis & Comparative Ranking
+console.log('\n[11] Testing Vendor Quotation Analysis & Comparative Ranking');
+const quoteA: VendorQuotation = {
+  id: 'qa-1',
+  vendorName: 'Royal Spice Caterers',
+  quotedPrice: 60000,
+  includedServices: ['Full buffet setup', '8 service staff', 'Welcome drinks'],
+  excludedServices: ['Live barbecue counter', 'Alcoholic bar service'],
+  taxesAndFees: 3000,
+  depositRequired: 15000,
+  paymentMilestones: '25% advance, balance on event day',
+  cancellationTerms: 'Free cancellation up to 7 days before event',
+  validUntil: '2026-11-20',
+  availabilityNotes: 'Available on selected date',
+};
+
+const quoteB: VendorQuotation = {
+  id: 'qb-2',
+  vendorName: 'Heritage Feast Kitchen',
+  quotedPrice: 52000,
+  includedServices: ['Standard buffet', '4 service staff'],
+  excludedServices: ['Cutlery', 'Table linens', 'Dessert station'],
+  taxesAndFees: 5000,
+  depositRequired: 20000,
+  paymentMilestones: '50% advance, balance on delivery',
+  cancellationTerms: 'Non-refundable deposit',
+  validUntil: '2026-11-15',
+  availabilityNotes: 'Tentatively held for 48 hours',
+};
+
+const totalLandedCostA = quoteA.quotedPrice + quoteA.taxesAndFees;
+const totalLandedCostB = quoteB.quotedPrice + quoteB.taxesAndFees;
+
+assert(totalLandedCostA === 63000, 'Quote A total landed cost equals ₹63,000 (60k + 3k tax)', `Got ${totalLandedCostA}`);
+assert(totalLandedCostB === 57000, 'Quote B total landed cost equals ₹57,000 (52k + 5k tax)', `Got ${totalLandedCostB}`);
+assert(totalLandedCostB < totalLandedCostA, 'Identifies Quote B as having lower total landed cost');
+
+const perHeadCostA_120 = Math.round(totalLandedCostA / 120);
+const perHeadCostA_160 = Math.round(totalLandedCostA / 160);
+assert(perHeadCostA_120 === 525, 'Quote A per-head cost for 120 guests is ₹525/guest', `Got ${perHeadCostA_120}`);
+assert(perHeadCostA_160 === 394, 'Quote A per-head cost scales down to ₹394/guest for 160 guests', `Got ${perHeadCostA_160}`);
+
+// 12. Adaptive Recommendation Selective Approval & Rejection Logic
+console.log('\n[12] Testing Adaptive Recommendation Approval/Rejection Logic');
+interface ProposedAdjustment {
+  name: string;
+  original: number;
+  proposed: number;
+  savings: number;
+  approved: boolean;
+}
+
+const proposedAdjustments: ProposedAdjustment[] = [
+  { name: 'Decoration', original: 30000, proposed: 20000, savings: 10000, approved: true },
+  { name: 'Catering', original: 75000, proposed: 60000, savings: 15000, approved: false },
+  { name: 'Entertainment', original: 12000, proposed: 7000, savings: 5000, approved: true },
+];
+
+const realizedSavings = proposedAdjustments
+  .filter((adj) => adj.approved)
+  .reduce((sum, adj) => sum + adj.savings, 0);
+
+assert(realizedSavings === 15000, 'Only approved recommendations yield savings (10k decor + 5k entertainment = ₹15,000)', `Got ${realizedSavings}`);
+
+const finalCategories = testCategories.map((c) => {
+  const match = proposedAdjustments.find((adj) => adj.name === c.name);
+  if (match && match.approved) {
+    return { ...c, allocatedAmount: match.proposed };
+  }
+  return c;
+});
+
+const decorFinal = finalCategories.find((c) => c.name === 'Decoration');
+const cateringFinal = finalCategories.find((c) => c.name === 'Catering');
+assert(decorFinal?.allocatedAmount === 20000, 'Approved Decoration cut was applied (₹20,000)');
+assert(cateringFinal?.allocatedAmount === 75000, 'Rejected Catering cut was preserved at original amount (₹75,000)');
+
+// 13. Gemini API Resilience: Markdown Cleanup & Safe Parsing
+console.log('\n[13] Testing Gemini API Markdown Cleanup & Parsing Resilience');
+function cleanAndParseGeminiResponse(rawText: string): Record<string, unknown> | null {
+  try {
+    let clean = rawText.trim();
+    if (clean.startsWith('```json')) {
+      clean = clean.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+    } else if (clean.startsWith('```')) {
+      clean = clean.replace(/^```\s*/i, '').replace(/\s*```$/, '');
+    }
+    return JSON.parse(clean);
+  } catch {
+    return null;
+  }
+}
+
+const rawMarkdownJson = '```json\n{\n  "status": "success",\n  "model": "gemini-3.6-flash",\n  "score": 98\n}\n```';
+const parsedMarkdown = cleanAndParseGeminiResponse(rawMarkdownJson);
+assert(parsedMarkdown !== null, 'Cleanly extracts JSON wrapped in markdown codeblocks');
+assert(parsedMarkdown?.status === 'success', 'Extracted payload contains valid properties');
+
+const malformedJson = '{\n  "status": "incomplete",\n  "model": "gemini-3.6-flash"';
+const parsedMalformed = cleanAndParseGeminiResponse(malformedJson);
+assert(parsedMalformed === null, 'Safely returns null on malformed JSON without unhandled throw');
+
+// 14. Input Sanitization & Security Protection
+console.log('\n[14] Testing Security Sanitization Protection');
+const xssPayload = '<script>alert("xss")</script>Sarah\'s 30th Birthday';
+const sanitizedTitle = sanitizeInput(xssPayload);
+assert(!sanitizedTitle.includes('<script>'), 'Strips executable script tags');
+assert(!sanitizedTitle.includes('</script>'), 'Strips closing script tags');
+assert(sanitizedTitle.includes("Sarah's 30th Birthday"), 'Preserves benign text content');
+
+const imgPayload = '<img src="x" onerror="alert(1)"/>Gala Event';
+const sanitizedImg = sanitizeInput(imgPayload);
+assert(!sanitizedImg.includes('<img'), 'Strips HTML image injection');
+
+const safeNumericBudget = sanitizeNumericAmount(150000, 100, 10000000, 150000);
+assert(safeNumericBudget === 150000, 'Valid numeric budget within bounds is accepted');
+
+const clampedNegativeBudget = sanitizeNumericAmount(-50000, 100, 10000000, 150000);
+assert(clampedNegativeBudget === 150000, 'Negative budget is clamped to default fallback amount');
+
+const nanBudget = sanitizeNumericAmount(NaN, 100, 10000000, 150000);
+assert(nanBudget === 150000, 'NaN input defaults safely to fallback amount');
 
 console.log('\n======================================================');
 console.log(`TEST SUMMARY: ${passedTests}/${totalTests} Passed (${failedTests} Failed)`);

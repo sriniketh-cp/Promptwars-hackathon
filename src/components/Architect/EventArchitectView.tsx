@@ -29,6 +29,7 @@ import {
 } from '../../types';
 import { api } from '../../services/api';
 import { formatCurrency, validateEventRequirements } from '../../utils/calculations';
+import { sanitizeInput } from '../../utils/security';
 import { SimulationBadge } from '../Common/SimulationBadge';
 
 interface EventArchitectViewProps {
@@ -144,7 +145,7 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
 
       // Normalize budget categories
       const normalizedCategories: BudgetCategory[] = (result.budgetCategories || []).map(
-        (c: any, i: number) => ({
+        (c: { name: string; allocatedAmount: number; notes?: string; isFixedCost?: boolean }, i: number) => ({
           id: `cat-${i}-${Date.now()}`,
           name: c.name,
           allocatedAmount: Number(c.allocatedAmount) || 0,
@@ -157,7 +158,7 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
       );
 
       // Normalize tasks
-      const normalizedTasks: EventTask[] = (result.tasks || []).map((t: any, i: number) => ({
+      const normalizedTasks: EventTask[] = (result.tasks || []).map((t: { title: string; description?: string; dueDate?: string; priority?: EventTask['priority']; relatedCategory?: string; isMilestone?: boolean }, i: number) => ({
         id: `task-${i}-${Date.now()}`,
         title: t.title,
         description: t.description || '',
@@ -171,7 +172,7 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
       }));
 
       // Normalize risks
-      const normalizedRisks: EventRisk[] = (result.risks || []).map((r: any, i: number) => {
+      const normalizedRisks: EventRisk[] = (result.risks || []).map((r: { description: string; category?: EventRisk['category']; likelihood?: string; impact?: string; mitigationStrategy?: string; contingencyPlan?: string }, i: number) => {
         const likelihood = (r.likelihood?.toLowerCase() || 'medium') as any;
         const impact = (r.impact?.toLowerCase() || 'medium') as any;
         const score = (likelihood === 'high' ? 3 : likelihood === 'medium' ? 2 : 1) *
@@ -205,7 +206,7 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
       });
 
       setStep(3);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to generate blueprint:', err);
       setErrorMsg('Failed to generate blueprint. Please verify your connection or try again.');
     } finally {
@@ -261,7 +262,7 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
           eventId: requirements.id,
           timestamp: new Date().toISOString(),
           reason: 'Initial blueprint creation via AI Event Architect',
-          snapshot: {} as any,
+          snapshot: {} as FestivoEvent,
         },
       ],
       copilotMessages: [
@@ -483,7 +484,7 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
                 value={guestCount}
                 onBlur={() => markTouched('guestCount')}
                 onChange={(e) => {
-                  setGuestCount(e.target.value === '' ? ('' as any) : Number(e.target.value));
+                  setGuestCount(e.target.value === '' ? 0 : Number(e.target.value));
                   markTouched('guestCount');
                 }}
                 placeholder="e.g., 120"
@@ -532,7 +533,7 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
                 value={totalBudget}
                 onBlur={() => markTouched('totalBudget')}
                 onChange={(e) => {
-                  setTotalBudget(e.target.value === '' ? ('' as any) : Number(e.target.value));
+                  setTotalBudget(e.target.value === '' ? 0 : Number(e.target.value));
                   markTouched('totalBudget');
                 }}
                 placeholder="e.g., 200000"

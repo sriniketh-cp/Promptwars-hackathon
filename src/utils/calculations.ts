@@ -3,7 +3,7 @@
  * Guaranteed floating-point precision handling and deterministic formulas.
  */
 
-import { BudgetCategory, CurrencyFormatOptions, EventRisk, EventTask, Guest } from '../types';
+import { BudgetCategory, EventTask, Guest } from '../types';
 
 /**
  * Format currency with internationalization and Indian Rupee support (lakhs/crores).

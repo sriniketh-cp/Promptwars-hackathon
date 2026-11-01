@@ -292,24 +292,25 @@ export const RiskAdvisorView: React.FC<RiskAdvisorViewProps> = ({
 
       {/* Add / Edit Risk Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="risk-modal-title">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 border border-[#E5DDD2] shadow-xl space-y-4">
-            <h3 className="font-serif font-bold text-base text-[#2D112C]">
+            <h3 id="risk-modal-title" className="font-serif font-bold text-base text-[#2D112C]">
               {editingId ? 'Edit Threat Evaluation' : 'Register Event Risk'}
             </h3>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-[#2D112C] mb-1">
+                <label htmlFor="risk-desc-input" className="block text-xs font-semibold text-[#2D112C] mb-1">
                   Risk Description *
                 </label>
                 <input
+                  id="risk-desc-input"
                   type="text"
                   required
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="e.g., Heavy rain shower flooding lawn"
-                  className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2]"
+                  className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
                 />
               </div>
 
@@ -320,7 +321,7 @@ export const RiskAdvisorView: React.FC<RiskAdvisorViewProps> = ({
                   </label>
                   <select
                     value={category}
-                    onChange={(e) => setCategory(e.target.value as any)}
+                    onChange={(e) => setCategory(e.target.value as EventRisk['category'])}
                     className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2] capitalize"
                   >
                     <option value="weather">Weather</option>
@@ -396,7 +397,7 @@ export const RiskAdvisorView: React.FC<RiskAdvisorViewProps> = ({
                 </label>
                 <select
                   value={status}
-                  onChange={(e) => setStatus(e.target.value as any)}
+                  onChange={(e) => setStatus(e.target.value as EventRisk['status'])}
                   className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2] capitalize"
                 >
                   <option value="identified">Identified</option>

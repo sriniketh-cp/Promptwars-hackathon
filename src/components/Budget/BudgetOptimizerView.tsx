@@ -153,7 +153,7 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
       const res = await api.adaptBudget(event, targetAmt, priorityNotes);
       setReductionProposal({
         ...res,
-        proposedCuts: (res.proposedCuts || []).map((c: any) => ({
+        proposedCuts: (res.proposedCuts || []).map((c: { categoryName: string; originalAmount: number; proposedAmount: number; savings: number; tradeOffDescription?: string; actionableRecommendation?: string; approved?: boolean }) => ({
           ...c,
           approved: true, // Default to approved for clear user review
         })),
@@ -327,27 +327,30 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-[11px] text-[#695A60] mb-1">Category Name</label>
+              <label htmlFor="new-cat-name" className="block text-[11px] text-[#695A60] mb-1">Category Name</label>
               <input
+                id="new-cat-name"
                 type="text"
                 placeholder="e.g., Transportation & Shuttle"
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
-                className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2]"
+                className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
               />
             </div>
             <div>
-              <label className="block text-[11px] text-[#695A60] mb-1">Allocated Amount</label>
+              <label htmlFor="new-cat-amount" className="block text-[11px] text-[#695A60] mb-1">Allocated Amount</label>
               <input
+                id="new-cat-amount"
                 type="number"
                 value={newCatAmount}
                 onChange={(e) => setNewCatAmount(Number(e.target.value))}
-                className="w-full text-xs font-mono p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2]"
+                className="w-full text-xs font-mono p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
               />
             </div>
             <div className="flex items-center gap-2 pt-6">
-              <label className="flex items-center gap-1.5 text-xs text-[#2D112C] cursor-pointer">
+              <label htmlFor="new-cat-fixed" className="flex items-center gap-1.5 text-xs text-[#2D112C] cursor-pointer">
                 <input
+                  id="new-cat-fixed"
                   type="checkbox"
                   checked={newCatFixed}
                   onChange={(e) => setNewCatFixed(e.target.checked)}
@@ -413,12 +416,14 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
                       <td className="py-3 px-4">
                         <input
                           type="text"
+                          aria-label="Category name"
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
                           className="w-full text-xs p-1.5 border border-[#DDD3C5] rounded bg-white"
                         />
                         <input
                           type="text"
+                          aria-label="Category notes"
                           placeholder="Notes"
                           value={editNotes}
                           onChange={(e) => setEditNotes(e.target.value)}
@@ -428,6 +433,7 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
                       <td className="py-3 px-4 text-right">
                         <input
                           type="number"
+                          aria-label="Allocated amount"
                           value={editAllocated}
                           onChange={(e) => setEditAllocated(Number(e.target.value))}
                           className="w-24 text-xs font-mono p-1.5 border border-[#DDD3C5] rounded bg-white text-right"
@@ -436,6 +442,7 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
                       <td className="py-3 px-4 text-right">
                         <input
                           type="number"
+                          aria-label="Estimated cost"
                           value={editEstimated}
                           onChange={(e) => setEditEstimated(Number(e.target.value))}
                           className="w-24 text-xs font-mono p-1.5 border border-[#DDD3C5] rounded bg-white text-right"
@@ -444,6 +451,7 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
                       <td className="py-3 px-4 text-right">
                         <input
                           type="number"
+                          aria-label="Confirmed quote"
                           value={editConfirmed}
                           onChange={(e) => setEditConfirmed(Number(e.target.value))}
                           className="w-24 text-xs font-mono p-1.5 border border-[#DDD3C5] rounded bg-white text-right"
@@ -531,6 +539,7 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
                           onClick={() => startEdit(cat)}
                           className="p-1 rounded text-[#7B6A71] hover:text-[#2D112C] hover:bg-[#EBE2D7]"
                           title="Edit category"
+                          aria-label={`Edit ${cat.name} category`}
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
@@ -538,6 +547,7 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
                           onClick={() => deleteCategory(cat.id)}
                           className="p-1 rounded text-[#7B6A71] hover:text-[#DC2626] hover:bg-[#FEE2E2]"
                           title="Delete category"
+                          aria-label={`Delete ${cat.name} category`}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -553,13 +563,13 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
 
       {/* Budget Reduction Modal / Panel */}
       {showReductionModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="budget-reduction-title">
           <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 border border-[#E5DDD2] shadow-xl space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-[#E5DDD2]">
               <div>
                 <div className="flex items-center gap-2">
                   <TrendingDown className="w-5 h-5 text-[#E0533C]" />
-                  <h3 className="font-serif font-bold text-lg text-[#2D112C]">
+                  <h3 id="budget-reduction-title" className="font-serif font-bold text-lg text-[#2D112C]">
                     Budget Optimization & Trade-Off Analysis
                   </h3>
                 </div>
@@ -575,7 +585,7 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
               <div className="py-12 text-center space-y-3">
                 <div className="w-8 h-8 border-2 border-[#2D112C]/20 border-t-[#2D112C] rounded-full animate-spin mx-auto" />
                 <p className="text-xs text-[#695A60]">
-                  Analyzing trade-offs with Gemini 3.8 Flash and calculating category distributions...
+                  Analyzing trade-offs with Gemini and calculating category distributions...
                 </p>
               </div>
             ) : reductionProposal ? (
@@ -594,8 +604,18 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
                     {reductionProposal.proposedCuts.map((cut, idx) => (
                       <div
                         key={idx}
+                        role="checkbox"
+                        tabIndex={0}
+                        aria-checked={!!cut.approved}
+                        aria-label={`Approve savings for ${cut.categoryName}`}
                         onClick={() => toggleCutApproval(idx)}
-                        className={`p-3 rounded-lg border transition-all cursor-pointer flex items-start justify-between gap-3 ${
+                        onKeyDown={(e) => {
+                          if (e.key === ' ' || e.key === 'Enter') {
+                            e.preventDefault();
+                            toggleCutApproval(idx);
+                          }
+                        }}
+                        className={`p-3 rounded-lg border transition-all cursor-pointer flex items-start justify-between gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C] ${
                           cut.approved
                             ? 'bg-[#FFF9F6] border-[#F97356]/40'
                             : 'bg-white border-[#E5DDD2] opacity-60'

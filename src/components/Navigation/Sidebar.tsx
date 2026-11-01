@@ -106,6 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onNewEvent();
                 onClose();
               }}
+              aria-label="Create new event"
               className="text-[#E0533C] hover:text-[#C9432D] font-bold flex items-center gap-1 normal-case tracking-normal"
             >
               <PlusCircle className="w-3.5 h-3.5" />
@@ -118,6 +119,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ) : (
             <div className="relative">
               <select
+                aria-label="Active workspace event selector"
                 value={activeEvent?.requirements.id || ''}
                 onChange={(e) => onSelectEvent(e.target.value)}
                 className="w-full text-xs font-semibold bg-white border border-[#DDD3C5] rounded-lg px-3 py-2 pr-8 text-[#2D112C] appearance-none focus:outline-none focus:ring-1 focus:ring-[#2D112C] truncate cursor-pointer shadow-2xs"

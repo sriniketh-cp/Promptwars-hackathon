@@ -69,7 +69,7 @@ export const AIActivityPanel: React.FC<AIActivityPanelProps> = ({ isOpen, onClos
       />
 
       {/* Slide-over Drawer */}
-      <div className="relative w-full max-w-2xl bg-[#FAF7F2] border-l border-[#E5DDD2] shadow-2xl flex flex-col h-full z-10 animate-in slide-in-from-right duration-300">
+      <div role="dialog" aria-modal="true" aria-labelledby="ai-activity-title" className="relative w-full max-w-2xl bg-[#FAF7F2] border-l border-[#E5DDD2] shadow-2xl flex flex-col h-full z-10 animate-in slide-in-from-right duration-300">
         {/* Header */}
         <div className="p-5 border-b border-[#E5DDD2] bg-[#FAF7F2] flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
@@ -78,7 +78,7 @@ export const AIActivityPanel: React.FC<AIActivityPanelProps> = ({ isOpen, onClos
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-serif font-bold text-base text-[#2D112C]">
+                <h3 id="ai-activity-title" className="font-serif font-bold text-base text-[#2D112C]">
                   Live AI Activity & Operation Trace
                 </h3>
                 <span className="flex items-center gap-1 text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[#16A34A]/10 text-[#16A34A] border border-[#16A34A]/20">
@@ -98,6 +98,7 @@ export const AIActivityPanel: React.FC<AIActivityPanelProps> = ({ isOpen, onClos
                 onClick={() => aiActivityTracker.clearActivities()}
                 className="p-1.5 text-xs text-[#7B6A71] hover:text-[#DC2626] hover:bg-[#FEE2E2] rounded-lg transition-colors"
                 title="Clear activity log"
+                aria-label="Clear activity log"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -336,50 +337,55 @@ export const AIActivityPanel: React.FC<AIActivityPanelProps> = ({ isOpen, onClos
                         </div>
 
                         {/* Structured Highlights */}
-                        <div className="p-2.5 bg-white text-[11px] text-[#4F3F46] border-t border-[#E5DDD2] space-y-1.5">
-                          {typeof item.response === 'object' && item.response !== null ? (
-                            <>
-                              {item.response.impactAssessment && (
-                                <div className="text-[11px]">
-                                  <strong className="text-[#2D112C]">Impact Assessment:</strong>{' '}
-                                  <span className="text-[#695A60] line-clamp-2">
-                                    {item.response.impactAssessment}
-                                  </span>
+                        {(() => {
+                          const res = typeof item.response === 'object' && item.response !== null ? (item.response as Record<string, any>) : null;
+                          return (
+                            <div className="p-2.5 bg-white text-[11px] text-[#4F3F46] border-t border-[#E5DDD2] space-y-1.5">
+                              {res ? (
+                                <>
+                                  {res.impactAssessment && (
+                                    <div className="text-[11px]">
+                                      <strong className="text-[#2D112C]">Impact Assessment:</strong>{' '}
+                                      <span className="text-[#695A60] line-clamp-2">
+                                        {String(res.impactAssessment)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {res.content && (
+                                    <div className="text-[11px]">
+                                      <strong className="text-[#2D112C]">Copilot Answer:</strong>{' '}
+                                      <span className="text-[#695A60] line-clamp-2">
+                                        {String(res.content)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {res.blueprint?.summary && (
+                                    <div className="text-[11px]">
+                                      <strong className="text-[#2D112C]">Blueprint Summary:</strong>{' '}
+                                      <span className="text-[#695A60] line-clamp-2">
+                                        {String(res.blueprint.summary)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {Array.isArray(res.affectedBudgetCategories) && (
+                                    <div className="text-[10px] font-mono text-[#166534]">
+                                      ✓ {res.affectedBudgetCategories.length} budget category adjustments proposed
+                                    </div>
+                                  )}
+                                  {Array.isArray(res.tradeOffs) && (
+                                    <div className="text-[10px] font-mono text-[#92400E]">
+                                      ✓ {res.tradeOffs.length} operational trade-offs evaluated
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <div className="text-[11px] text-[#695A60] line-clamp-3">
+                                  {String(item.response || '')}
                                 </div>
                               )}
-                              {item.response.content && (
-                                <div className="text-[11px]">
-                                  <strong className="text-[#2D112C]">Copilot Answer:</strong>{' '}
-                                  <span className="text-[#695A60] line-clamp-2">
-                                    {item.response.content}
-                                  </span>
-                                </div>
-                              )}
-                              {item.response.blueprint?.summary && (
-                                <div className="text-[11px]">
-                                  <strong className="text-[#2D112C]">Blueprint Summary:</strong>{' '}
-                                  <span className="text-[#695A60] line-clamp-2">
-                                    {item.response.blueprint.summary}
-                                  </span>
-                                </div>
-                              )}
-                              {item.response.affectedBudgetCategories && (
-                                <div className="text-[10px] font-mono text-[#166534]">
-                                  ✓ {item.response.affectedBudgetCategories.length} budget category adjustments proposed
-                                </div>
-                              )}
-                              {item.response.tradeOffs && (
-                                <div className="text-[10px] font-mono text-[#92400E]">
-                                  ✓ {item.response.tradeOffs.length} operational trade-offs evaluated
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <div className="text-[11px] text-[#695A60] line-clamp-3">
-                              {String(item.response)}
                             </div>
-                          )}
-                        </div>
+                          );
+                        })()}
 
                         {/* Raw JSON View */}
                         {isResponseExpanded && (

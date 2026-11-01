@@ -78,7 +78,7 @@ function generateFallbackAdaptiveProposal(
 ): PlanRevisionProposal {
   const origReq = currentEvent.requirements;
   const newReq = { ...origReq, ...updatedRequirements };
-  const deltas = calculateAdaptiveDeltas(origReq, newReq);
+  const deltas = calculateAdaptiveDeltas(origReq.guestCount, origReq.totalBudget, newReq.guestCount, newReq.totalBudget);
 
   return {
     id: `proposal-${Date.now()}`,
@@ -87,7 +87,7 @@ function generateFallbackAdaptiveProposal(
     triggerReason: triggerReason || 'Requirements revision',
     originalRequirements: origReq,
     updatedRequirements: newReq,
-    impactAssessment: `Guest count shifted from ${origReq.guestCount} to ${newReq.guestCount} (${deltas.guestDelta >= 0 ? '+' : ''}${deltas.guestDelta}), while total budget moved from ${origReq.currency} ${origReq.totalBudget.toLocaleString()} to ${origReq.currency} ${newReq.totalBudget.toLocaleString()} (${deltas.budgetDelta >= 0 ? '+' : ''}${deltas.budgetDelta.toLocaleString()}). Effective per-guest spending capacity shifted from ${origReq.currency} ${deltas.originalPerGuestSpend.toLocaleString()} to ${origReq.currency} ${deltas.newPerGuestSpend.toLocaleString()} (${deltas.perGuestDelta >= 0 ? '+' : ''}${deltas.perGuestDelta.toLocaleString()}/guest). This compresses variable catering and favors margins while fixed venue rental remains constant.`,
+    impactAssessment: `Guest count shifted from ${origReq.guestCount} to ${newReq.guestCount} (${deltas.guestDelta >= 0 ? '+' : ''}${deltas.guestDelta}), while total budget moved from ${origReq.currency} ${origReq.totalBudget.toLocaleString()} to ${origReq.currency} ${newReq.totalBudget.toLocaleString()} (${deltas.budgetDelta >= 0 ? '+' : ''}${deltas.budgetDelta.toLocaleString()}). Effective per-guest spending capacity shifted from ${origReq.currency} ${deltas.origPerGuest.toLocaleString()} to ${origReq.currency} ${deltas.newPerGuest.toLocaleString()} (${deltas.perGuestDelta >= 0 ? '+' : ''}${deltas.perGuestDelta.toLocaleString()}/guest). This compresses variable catering and favors margins while fixed venue rental remains constant.`,
     affectedBudgetCategories: [
       {
         categoryName: 'Catering',
@@ -127,25 +127,22 @@ function generateFallbackAdaptiveProposal(
         taskId: 'task-caterer-buffer',
         title: 'Renegotiate Caterer Headcount & Tier',
         action: 'modify',
-        reason: `Update catering guarantee from ${origReq.guestCount} to ${newReq.guestCount} guests at targeted plate rate.`,
+        rationale: `Update catering guarantee from ${origReq.guestCount} to ${newReq.guestCount} guests at targeted plate rate.`,
         approved: true,
       },
       {
         taskId: 'task-seating-layout',
         title: 'Reconfigure Venue Seating Density',
         action: 'modify',
-        reason: `Verify hall floor plan accommodates ${newReq.guestCount} attendees comfortably.`,
+        rationale: `Verify hall floor plan accommodates ${newReq.guestCount} attendees comfortably.`,
         approved: true,
       },
     ],
     newRisks: [
       {
         description: `Budget compression (-₹${Math.abs(deltas.budgetDelta).toLocaleString()}) alongside guest surge (+${deltas.guestDelta}) stresses per-guest hospitality.`,
-        category: 'budget',
-        likelihood: 'high',
-        impact: 'high',
-        mitigationStrategy: 'Lock streamlined menu with caterer in writing 3 weeks in advance with guaranteed head-count pricing.',
-        contingencyPlan: 'Keep live pasta/noodle counter on standby for high-speed replenishment.',
+        severity: 'high',
+        mitigation: 'Lock streamlined menu with caterer in writing 3 weeks in advance with guaranteed head-count pricing.',
         approved: true,
       },
     ],
@@ -335,7 +332,7 @@ export const api = {
         return data;
       }
       console.warn(`[generateBlueprint] Server status: ${res.status}. Transitioning to resilient fallback.`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.warn('[generateBlueprint] Fetch failed or timed out. Transitioning to resilient fallback:', error);
     }
 
@@ -390,7 +387,7 @@ export const api = {
         });
         return data;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.warn('[adaptBudget] Fetch failed:', error);
     }
 
@@ -486,7 +483,7 @@ export const api = {
         });
         return data;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.warn('[runAdaptiveIntelligence] Fetch failed:', error);
     }
 
@@ -548,7 +545,7 @@ export const api = {
       });
 
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       const latencyMs = Math.round(performance.now() - startTime);
       aiActivityTracker.logError({ id: logId, error, latencyMs });
       throw error;
@@ -591,7 +588,7 @@ export const api = {
         });
         return data;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.warn('[askCopilot] Fetch failed:', error);
     }
 

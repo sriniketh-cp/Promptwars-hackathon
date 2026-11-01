@@ -12,8 +12,8 @@ export interface AIActivityItem {
   status: 'loading' | 'success' | 'error';
   timestamp: string;
   latencyMs?: number;
-  input: Record<string, any>;
-  response?: Record<string, any> | string;
+  input: Record<string, unknown>;
+  response?: Record<string, unknown> | string;
   isSimulated?: boolean;
   errorMessage?: string;
 }
@@ -82,7 +82,7 @@ class AIActivityTracker {
   public logStart(params: {
     operation: string;
     endpoint: string;
-    input: Record<string, any>;
+    input: Record<string, unknown>;
     model?: string;
   }): string {
     const id = `act-${Date.now()}-${Math.random().toString(36).substring(7)}`;
@@ -95,7 +95,11 @@ class AIActivityTracker {
     });
 
     // Sanitize input (remove any potential secret fields)
-    const sanitizedInput = this.sanitizeData(params.input);
+    const sanitized = this.sanitizeData(params.input);
+    const sanitizedInput: Record<string, unknown> =
+      typeof sanitized === 'object' && sanitized !== null
+        ? (sanitized as Record<string, unknown>)
+        : { value: sanitized };
 
     const newItem: AIActivityItem = {
       id,
@@ -114,7 +118,7 @@ class AIActivityTracker {
 
   public logSuccess(params: {
     id: string;
-    response: any;
+    response: unknown;
     isSimulated?: boolean;
     modelUsed?: string;
     latencyMs?: number;
@@ -131,12 +135,12 @@ class AIActivityTracker {
     this.notify();
   }
 
-  public logError(params: { id: string; error: any; latencyMs?: number }) {
+  public logError(params: { id: string; error: unknown; latencyMs?: number }) {
     const item = this.activities.find((a) => a.id === params.id);
     if (!item) return;
 
     item.status = 'error';
-    item.errorMessage = params.error?.message || String(params.error);
+    item.errorMessage = params.error instanceof Error ? params.error.message : String(params.error);
     if (params.latencyMs !== undefined) item.latencyMs = params.latencyMs;
 
     this.notify();
@@ -147,8 +151,9 @@ class AIActivityTracker {
     this.notify();
   }
 
-  private sanitizeData(data: any): any {
-    if (!data) return data;
+  private sanitizeData(data: unknown): Record<string, unknown> | string {
+    if (!data) return {};
+    if (typeof data === 'string') return data;
     try {
       const str = JSON.stringify(data, (key, value) => {
         // Redact any sensitive tokens, secrets, or keys
@@ -164,7 +169,7 @@ class AIActivityTracker {
         }
         return value;
       });
-      return JSON.parse(str);
+      return JSON.parse(str) as Record<string, unknown>;
     } catch {
       return { summary: 'Non-serializable payload' };
     }

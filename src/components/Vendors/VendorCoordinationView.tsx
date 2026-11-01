@@ -230,21 +230,23 @@ export const VendorCoordinationView: React.FC<VendorCoordinationViewProps> = ({
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-[11px] text-[#695A60] mb-1">Vendor Name *</label>
+              <label htmlFor="vendor-name-input" className="block text-[11px] text-[#695A60] mb-1">Vendor Name *</label>
               <input
+                id="vendor-name-input"
                 type="text"
                 value={vendorName}
                 onChange={(e) => setVendorName(e.target.value)}
                 placeholder="e.g., Royal Bloom Florists"
-                className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2]"
+                className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
               />
             </div>
             <div>
-              <label className="block text-[11px] text-[#695A60] mb-1">Service Category *</label>
+              <label htmlFor="vendor-category-select" className="block text-[11px] text-[#695A60] mb-1">Service Category *</label>
               <select
+                id="vendor-category-select"
                 value={vendorCategory}
                 onChange={(e) => setVendorCategory(e.target.value as VendorCategory)}
-                className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2] capitalize"
+                className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2] capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
               >
                 {categoriesList.map((cat) => (
                   <option key={cat} value={cat}>
@@ -254,43 +256,47 @@ export const VendorCoordinationView: React.FC<VendorCoordinationViewProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-[11px] text-[#695A60] mb-1">Contact Person</label>
+              <label htmlFor="vendor-contact-input" className="block text-[11px] text-[#695A60] mb-1">Contact Person</label>
               <input
+                id="vendor-contact-input"
                 type="text"
                 value={contactPerson}
                 onChange={(e) => setContactPerson(e.target.value)}
                 placeholder="e.g., Jane Doe"
-                className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2]"
+                className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
               />
             </div>
             <div>
-              <label className="block text-[11px] text-[#695A60] mb-1">Phone Number</label>
+              <label htmlFor="vendor-phone-input" className="block text-[11px] text-[#695A60] mb-1">Phone Number</label>
               <input
+                id="vendor-phone-input"
                 type="text"
                 value={contactPhone}
                 onChange={(e) => setContactPhone(e.target.value)}
                 placeholder="+91 98000 00000"
-                className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2]"
+                className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
               />
             </div>
             <div>
-              <label className="block text-[11px] text-[#695A60] mb-1">Email Address</label>
+              <label htmlFor="vendor-email-input" className="block text-[11px] text-[#695A60] mb-1">Email Address</label>
               <input
+                id="vendor-email-input"
                 type="email"
                 value={contactEmail}
                 onChange={(e) => setContactEmail(e.target.value)}
                 placeholder="vendor@example.com"
-                className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2]"
+                className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
               />
             </div>
             <div>
-              <label className="block text-[11px] text-[#695A60] mb-1">Special Notes</label>
+              <label htmlFor="vendor-notes-input" className="block text-[11px] text-[#695A60] mb-1">Special Notes</label>
               <input
+                id="vendor-notes-input"
                 type="text"
                 value={vendorNotes}
                 onChange={(e) => setVendorNotes(e.target.value)}
                 placeholder="Recommended by friend, tasting required"
-                className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2]"
+                className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
               />
             </div>
           </div>
@@ -337,8 +343,18 @@ export const VendorCoordinationView: React.FC<VendorCoordinationViewProps> = ({
               return (
                 <div
                   key={v.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isSelected}
+                  aria-label={`Select vendor ${v.name}`}
                   onClick={() => setActiveVendorId(v.id)}
-                  className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                  onKeyDown={(e) => {
+                    if (e.key === ' ' || e.key === 'Enter') {
+                      e.preventDefault();
+                      setActiveVendorId(v.id);
+                    }
+                  }}
+                  className={`p-4 rounded-xl border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C] ${
                     isSelected
                       ? 'bg-white border-[#2D112C] shadow-sm ring-1 ring-[#2D112C]'
                       : 'bg-white border-[#E5DDD2] hover:bg-[#FAF7F2]'

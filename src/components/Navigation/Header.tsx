@@ -78,6 +78,7 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onOpenAiActivity}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#2D112C] text-[#FAF7F2] hover:bg-[#3D183B] border border-[#D4AF37]/40 shadow-2xs transition-colors whitespace-nowrap"
           title="Inspect real-time Gemini operation trace, user inputs, and structured responses"
+          aria-label="Inspect real-time Gemini AI operation trace, user inputs, and structured responses"
         >
           <Activity className="w-3.5 h-3.5 text-[#E0533C]" />
           <span>AI Activity</span>
@@ -89,6 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onOpenAdaptive}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#FFF0ED] text-[#C53F28] hover:bg-[#FFE4DE] border border-[#F9C3B8] transition-colors whitespace-nowrap"
             title="Simulate a requirements change"
+            aria-label="Simulate a requirements change with Adaptive Intelligence"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">What changed?</span>
@@ -98,6 +100,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         <button
           onClick={onNewEvent}
+          aria-label="Create new event"
           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#E0533C] text-white hover:bg-[#C9432D] shadow-xs transition-colors whitespace-nowrap"
         >
           <Plus className="w-3.5 h-3.5" />

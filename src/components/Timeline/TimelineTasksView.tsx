@@ -336,6 +336,7 @@ export const TimelineTasksView: React.FC<TimelineTasksViewProps> = ({
                       onClick={() => openEdit(task)}
                       className="p-1.5 rounded-lg text-[#7B6A71] hover:text-[#2D112C] hover:bg-[#EBE2D7]"
                       title="Edit task"
+                      aria-label={`Edit task ${task.title}`}
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
@@ -343,6 +344,7 @@ export const TimelineTasksView: React.FC<TimelineTasksViewProps> = ({
                       onClick={() => handleDeleteTask(task.id)}
                       className="p-1.5 rounded-lg text-[#7B6A71] hover:text-[#DC2626] hover:bg-[#FEE2E2]"
                       title="Delete task"
+                      aria-label={`Delete task ${task.title}`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -356,24 +358,25 @@ export const TimelineTasksView: React.FC<TimelineTasksViewProps> = ({
 
       {/* Add / Edit Task Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 border border-[#E5DDD2] shadow-xl space-y-4">
-            <h3 className="font-serif font-bold text-base text-[#2D112C]">
+            <h3 id="task-modal-title" className="font-serif font-bold text-base text-[#2D112C]">
               {editingId ? 'Edit Task' : 'Add Planning Milestone'}
             </h3>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-[#2D112C] mb-1">
+                <label htmlFor="task-title-input" className="block text-xs font-semibold text-[#2D112C] mb-1">
                   Task Title *
                 </label>
                 <input
+                  id="task-title-input"
                   type="text"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g., Finalize floral arch mockup"
-                  className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2]"
+                  className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
                 />
               </div>
 

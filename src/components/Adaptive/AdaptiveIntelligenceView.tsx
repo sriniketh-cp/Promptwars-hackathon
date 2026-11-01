@@ -275,7 +275,7 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
       </div>
 
       {statusMessage && (
-        <div className="p-3.5 rounded-lg bg-[#F0FDF4] border border-[#BBF7D0] text-xs text-[#166534] flex items-center justify-between gap-2">
+        <div role="status" aria-live="polite" className="p-3.5 rounded-lg bg-[#F0FDF4] border border-[#BBF7D0] text-xs text-[#166534] flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 shrink-0 text-[#16A34A]" />
             <span>{statusMessage}</span>
@@ -309,11 +309,13 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
               <span className="font-mono text-[#7B6A71]">Current: {currentReq.guestCount}</span>
             </div>
             <input
+              id="proposed-guests-input"
+              aria-label="Proposed guest count"
               type="number"
               min="5"
               value={proposedGuests}
               onChange={(e) => setProposedGuests(Number(e.target.value))}
-              className="w-full text-base font-mono font-bold text-[#2D112C] bg-white border border-[#DDD3C5] rounded-lg p-2 tabular-nums"
+              className="w-full text-base font-mono font-bold text-[#2D112C] bg-white border border-[#DDD3C5] rounded-lg p-2 tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
             />
             <div className="text-[11px] font-mono">
               Delta:{' '}
@@ -341,11 +343,13 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
               </span>
             </div>
             <input
+              id="proposed-budget-input"
+              aria-label="Proposed budget ceiling"
               type="number"
               min="1000"
               value={proposedBudget}
               onChange={(e) => setProposedBudget(Number(e.target.value))}
-              className="w-full text-base font-mono font-bold text-[#2D112C] bg-white border border-[#DDD3C5] rounded-lg p-2 tabular-nums"
+              className="w-full text-base font-mono font-bold text-[#2D112C] bg-white border border-[#DDD3C5] rounded-lg p-2 tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
             />
             <div className="text-[11px] font-mono">
               Delta:{' '}
@@ -371,10 +375,12 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
               <span className="font-mono text-[#7B6A71]">Current: {currentReq.date}</span>
             </div>
             <input
+              id="proposed-date-input"
+              aria-label="Proposed celebration date"
               type="date"
               value={proposedDate}
               onChange={(e) => setProposedDate(e.target.value)}
-              className="w-full text-sm font-mono font-bold text-[#2D112C] bg-white border border-[#DDD3C5] rounded-lg p-2 tabular-nums"
+              className="w-full text-sm font-mono font-bold text-[#2D112C] bg-white border border-[#DDD3C5] rounded-lg p-2 tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
             />
             <div className="text-[11px] text-[#695A60]">
               {proposedDate !== currentReq.date ? 'Date shifted — will recalculate task milestones' : 'Same date'}
@@ -384,15 +390,16 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
 
         {/* Change Reason / Context Input */}
         <div>
-          <label className="block text-xs font-semibold text-[#2D112C] mb-1">
+          <label htmlFor="change-reason-input" className="block text-xs font-semibold text-[#2D112C] mb-1">
             Reason for Change / Context for AI Reasoner
           </label>
           <input
+            id="change-reason-input"
             type="text"
             value={changeReason}
             onChange={(e) => setChangeReason(e.target.value)}
             placeholder="e.g., Guest list expanded, budget constrained by venue surcharge, date moved forward"
-            className="w-full text-xs bg-[#FAF7F2] border border-[#DDD3C5] rounded-lg p-2.5 text-[#2D112C]"
+            className="w-full text-xs bg-[#FAF7F2] border border-[#DDD3C5] rounded-lg p-2.5 text-[#2D112C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
           />
         </div>
 
@@ -541,8 +548,18 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
               {activeProposal.affectedBudgetCategories.map((cat, idx) => (
                 <div
                   key={idx}
+                  role="checkbox"
+                  tabIndex={0}
+                  aria-checked={cat.approved}
+                  aria-label={`Toggle adjustment for ${cat.categoryName}`}
                   onClick={() => toggleBudgetAdjustment(idx)}
-                  className={`p-3.5 rounded-lg border transition-all cursor-pointer flex items-start justify-between gap-4 ${
+                  onKeyDown={(e) => {
+                    if (e.key === ' ' || e.key === 'Enter') {
+                      e.preventDefault();
+                      toggleBudgetAdjustment(idx);
+                    }
+                  }}
+                  className={`p-3.5 rounded-lg border transition-all cursor-pointer flex items-start justify-between gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C] ${
                     cat.approved
                       ? 'bg-[#FFF9F6] border-[#F97356]/40'
                       : 'bg-white border-[#E5DDD2] opacity-60'
@@ -600,8 +617,18 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
                 {activeProposal.affectedTasks.map((t, idx) => (
                   <div
                     key={idx}
+                    role="checkbox"
+                    tabIndex={0}
+                    aria-checked={!!t.approved}
+                    aria-label={`Toggle task adjustment for ${t.title}`}
                     onClick={() => toggleTaskAdjustment(idx)}
-                    className={`p-2.5 rounded-lg border transition-all cursor-pointer flex items-start gap-2.5 ${
+                    onKeyDown={(e) => {
+                      if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        toggleTaskAdjustment(idx);
+                      }
+                    }}
+                    className={`p-2.5 rounded-lg border transition-all cursor-pointer flex items-start gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C] ${
                       t.approved ? 'bg-white border-[#DDD3C5]' : 'bg-[#F2ECE3] border-[#E5DDD2] opacity-60'
                     }`}
                   >
@@ -632,8 +659,18 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
                 {activeProposal.newRisks.map((r, idx) => (
                   <div
                     key={idx}
+                    role="checkbox"
+                    tabIndex={0}
+                    aria-checked={!!r.approved}
+                    aria-label={`Toggle risk adjustment for ${r.description}`}
                     onClick={() => toggleRiskAdjustment(idx)}
-                    className={`p-2.5 rounded-lg border transition-all cursor-pointer flex items-start gap-2.5 ${
+                    onKeyDown={(e) => {
+                      if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        toggleRiskAdjustment(idx);
+                      }
+                    }}
+                    className={`p-2.5 rounded-lg border transition-all cursor-pointer flex items-start gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C] ${
                       r.approved ? 'bg-white border-[#DDD3C5]' : 'bg-[#F2ECE3] border-[#E5DDD2] opacity-60'
                     }`}
                   >

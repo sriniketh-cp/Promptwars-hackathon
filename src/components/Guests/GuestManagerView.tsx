@@ -389,6 +389,7 @@ export const GuestManagerView: React.FC<GuestManagerViewProps> = ({
                           onClick={() => openEdit(g)}
                           className="p-1 rounded text-[#7B6A71] hover:text-[#2D112C] hover:bg-[#EBE2D7]"
                           title="Edit guest"
+                          aria-label={`Edit guest ${g.name}`}
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
@@ -396,6 +397,7 @@ export const GuestManagerView: React.FC<GuestManagerViewProps> = ({
                           onClick={() => handleDeleteGuest(g.id)}
                           className="p-1 rounded text-[#7B6A71] hover:text-[#DC2626] hover:bg-[#FEE2E2]"
                           title="Delete guest"
+                          aria-label={`Delete guest ${g.name}`}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -411,44 +413,47 @@ export const GuestManagerView: React.FC<GuestManagerViewProps> = ({
 
       {/* Add / Edit Guest Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="guest-modal-title">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 border border-[#E5DDD2] shadow-xl space-y-4">
-            <h3 className="font-serif font-bold text-base text-[#2D112C]">
+            <h3 id="guest-modal-title" className="font-serif font-bold text-base text-[#2D112C]">
               {editingGuestId ? 'Edit Guest Record' : 'Add New Guest'}
             </h3>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-[#2D112C] mb-1">Guest Name *</label>
+                <label htmlFor="guest-name-input" className="block text-xs font-semibold text-[#2D112C] mb-1">Guest Name *</label>
                 <input
+                  id="guest-name-input"
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g., Ananya Sharma"
-                  className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2]"
+                  className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#2D112C] mb-1">Email</label>
+                  <label htmlFor="guest-email-input" className="block text-xs font-semibold text-[#2D112C] mb-1">Email</label>
                   <input
+                    id="guest-email-input"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="guest@example.com"
-                    className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2]"
+                    className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#2D112C] mb-1">Phone</label>
+                  <label htmlFor="guest-phone-input" className="block text-xs font-semibold text-[#2D112C] mb-1">Phone</label>
                   <input
+                    id="guest-phone-input"
                     type="text"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+91 ..."
-                    className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2]"
+                    className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-[#FAF7F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
                   />
                 </div>
               </div>

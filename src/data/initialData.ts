@@ -392,7 +392,7 @@ export const SAMPLE_BIRTHDAY_EVENT: FestivoEvent = {
       eventId: 'festivo-evt-demo-01',
       timestamp: '2026-10-20T14:30:00.000Z',
       reason: 'Initial blueprint creation and baseline budget allocation',
-      snapshot: {} as any, // populated on revision save
+      snapshot: {} as FestivoEvent, // populated on revision save
     }
   ],
   copilotMessages: [

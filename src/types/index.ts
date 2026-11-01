@@ -230,10 +230,11 @@ export interface CopilotMessage {
   content: string;
   timestamp: string;
   isSimulated?: boolean;
+  fallbackReason?: string;
   suggestedAction?: {
     type: 'open_budget' | 'open_what_changed' | 'open_vendors' | 'add_task';
     label: string;
-    payload?: any;
+    payload?: Record<string, unknown>;
   };
 }
 
