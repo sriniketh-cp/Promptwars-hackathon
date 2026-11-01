@@ -565,52 +565,31 @@ async function callGeminiWithRetry(params) {
     lastGeminiError = "No API key configured (aiClient is null)";
     return null;
   }
-  const candidateModels = [
-    "gemini-3.6-flash",
-    "gemini-3.8-flash"
-  ];
-  const startTime = Date.now();
-  const MAX_TOTAL_MS = 9e3;
-  for (const model of candidateModels) {
-    const elapsed = Date.now() - startTime;
-    const remainingTime = MAX_TOTAL_MS - elapsed;
-    if (remainingTime < 1500) {
-      console.warn("[Gemini]: Time window depleted, engaging deterministic simulation fallback.");
-      lastGeminiError = "Time window depleted (>9000ms)";
-      break;
-    }
-    const perCallTimeout = Math.min(remainingTime - 400, 8e3);
-    try {
-      const responsePromise = aiClient.models.generateContent({
-        model,
-        contents: params.contents,
-        config: params.config
-      });
-      const timeoutPromise = new Promise(
-        (_, reject) => setTimeout(() => reject(new Error(`Gemini call timed out after ${perCallTimeout}ms`)), perCallTimeout)
-      );
-      const response = await Promise.race([responsePromise, timeoutPromise]);
-      if (response) {
-        const text = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) {
-          lastGeminiError = null;
-          return { text, modelUsed: model };
-        } else {
-          lastGeminiError = `Response returned from ${model} but contained empty text`;
-          console.warn(`[Gemini empty response on ${model}]`, JSON.stringify(response));
-        }
+  const model = "gemini-3.6-flash";
+  try {
+    const responsePromise = aiClient.models.generateContent({
+      model,
+      contents: params.contents,
+      config: params.config
+    });
+    const timeoutPromise = new Promise(
+      (_, reject) => setTimeout(() => reject(new Error("Gemini call timed out after 12s")), 12e3)
+    );
+    const response = await Promise.race([responsePromise, timeoutPromise]);
+    if (response) {
+      const text = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text && text.trim().length > 0) {
+        lastGeminiError = null;
+        return { text: text.trim(), modelUsed: model };
+      } else {
+        lastGeminiError = `Response returned from ${model} but contained empty text`;
+        console.warn(`[Gemini empty response on ${model}]`, JSON.stringify(response));
       }
-    } catch (err) {
-      const msg = String(err?.message || err);
-      console.warn(`[Gemini error on ${model}]:`, msg);
-      lastGeminiError = `[${model}]: ${msg}`;
-      if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota") || msg.includes("Quota") || msg.includes("rate-limit")) {
-        console.warn("[Gemini]: Quota exceeded on API key. Transitioning immediately to simulation fallback.");
-        lastGeminiError = `Quota exceeded (429 RESOURCE_EXHAUSTED): ${msg}`;
-        break;
-      }
-      continue;
     }
+  } catch (err) {
+    const msg = String(err?.message || err);
+    console.warn(`[Gemini error on ${model}]:`, msg);
+    lastGeminiError = `[${model}]: ${msg}`;
   }
   return null;
 }
@@ -1391,43 +1370,22 @@ app.post("/api/gemini/copilot", async (req, res) => {
   const budgetCats = currentEvent.budgetCategories || [];
   const tasks = currentEvent.tasks || [];
   const risks = currentEvent.risks || [];
-  const guests = currentEvent.guests || [];
   const contextPrompt = `
-You are the Festivo AI Copilot, an expert celebration and event planning assistant.
-You are actively advising on the following REAL event in the user's workspace:
-- Name: "${reqs.name}" (${reqs.type})
-- Date: ${reqs.date} (${reqs.city})
-- Guests: ${reqs.guestCount}
-- Total Budget: ${reqs.currency} ${reqs.totalBudget}
-- Theme: ${reqs.theme}
-- Outdoor: ${reqs.isOutdoor}
-- Priorities: ${reqs.priorities?.join(", ")}
+You are the Festivo AI Copilot advising on celebration "${reqs.name}" (${reqs.type}, ${reqs.guestCount} guests, budget ${reqs.currency} ${reqs.totalBudget.toLocaleString()} in ${reqs.city}).
+Budget allocations: ${budgetCats.map((c) => `${c.name}: ${reqs.currency} ${Number(c.allocatedAmount).toLocaleString()} (Locked: ${c.confirmedQuote > 0})`).join(", ")}.
+Key tasks: ${tasks.slice(0, 5).map((t) => t.title).join(", ")}.
+Top risk: ${risks[0]?.description || "None"}.
 
-Current Financials:
-- Total Budget: ${reqs.currency} ${reqs.totalBudget}
-- Allocated: ${reqs.currency} ${budgetCats.reduce((s, c) => s + c.allocatedAmount, 0)}
-- Categories: ${budgetCats.map((c) => `${c.name}: ${c.allocatedAmount} (Locked: ${c.confirmedQuote > 0})`).join("; ")}
+User Query: "${userQuery}"
 
-Current Tasks (${tasks.length}):
-${tasks.slice(0, 8).map((t) => `- [${t.status}] ${t.title} (Due: ${t.dueDate})`).join("\n")}
-
-Active Risks (${risks.length}):
-${risks.map((r) => `- ${r.description} (Severity: ${r.severityScore}/9, Status: ${r.status})`).join("\n")}
-
-Guests Status:
-Total Guests: ${guests.length} records.
-
-User Question: "${userQuery}"
-
-Directives:
-1. Ground your answer strictly in the active event data above. Do not invent contradictory figures.
-2. If the user asks how to save money, suggest specific trade-offs across their flexible categories.
-3. If they ask about risks, reference their actual logged risks (weather, decibel curfew, capacity).
-4. If a suggested action implies a change to the plan, formulate a constructive suggestion without claiming it is already saved.
-5. Be concise, warm, professional, and actionable.
+Provide 3 high-impact, actionable recommendations referencing these exact numbers. Keep answer structured with concise bullet points under 120 words.
 `;
   const geminiResult = await callGeminiWithRetry({
-    contents: contextPrompt
+    contents: contextPrompt,
+    config: {
+      maxOutputTokens: 400,
+      temperature: 0.7
+    }
   });
   if (geminiResult) {
     return res.json({
