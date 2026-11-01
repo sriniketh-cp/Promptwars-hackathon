@@ -4,6 +4,8 @@
  */
 
 import {
+  validateEventRequirements,
+  calculateAdaptiveDeltas,
   calculateTotalAllocated,
   calculateTotalEstimated,
   calculateTotalConfirmed,
@@ -147,6 +149,100 @@ assert(modifiedEvent.requirements.guestCount === 160, 'Modified event guest coun
 const restoredEvent = JSON.parse(JSON.stringify(originalEventSnapshot));
 assert(restoredEvent.requirements.guestCount === 120, 'Restored event reverts accurately to original 120 guests');
 assert(restoredEvent.requirements.totalBudget === 200000, 'Restored event budget reverts accurately to ₹2,00,000');
+
+// 8. Live Form Validation Rules (Requirement 2)
+console.log('\n[8] Testing Live Form Validation Rules (Negative, Zero, Missing, Invalid Date)');
+
+// Test: Negative guest count
+const negGuestVal = validateEventRequirements({
+  name: 'Anniversary Party',
+  city: 'Bengaluru',
+  date: '2026-11-28',
+  guestCount: -15,
+  totalBudget: 100000,
+});
+assert(!negGuestVal.isValid, 'Rejects negative guest counts (-15)');
+assert(negGuestVal.errors.guestCount === 'Guest count cannot be negative.', 'Returns explicit negative guest message');
+
+// Test: Zero guests
+const zeroGuestVal = validateEventRequirements({
+  name: 'Anniversary Party',
+  city: 'Bengaluru',
+  date: '2026-11-28',
+  guestCount: 0,
+  totalBudget: 100000,
+});
+assert(!zeroGuestVal.isValid, 'Rejects zero guests');
+assert(zeroGuestVal.errors.guestCount?.includes('at least 1 attendee') === true, 'Returns explicit zero guests rejection message');
+
+// Test: Negative budget
+const negBudgetVal = validateEventRequirements({
+  name: 'Anniversary Party',
+  city: 'Bengaluru',
+  date: '2026-11-28',
+  guestCount: 50,
+  totalBudget: -50000,
+});
+assert(!negBudgetVal.isValid, 'Rejects negative budgets (-₹50,000)');
+assert(negBudgetVal.errors.totalBudget === 'Budget cannot be negative.', 'Returns explicit negative budget message');
+
+// Test: Zero budget
+const zeroBudgetVal = validateEventRequirements({
+  name: 'Anniversary Party',
+  city: 'Bengaluru',
+  date: '2026-11-28',
+  guestCount: 50,
+  totalBudget: 0,
+});
+assert(!zeroBudgetVal.isValid, 'Rejects zero budget');
+
+// Test: Missing required fields
+const missingFieldsVal = validateEventRequirements({
+  name: '',
+  city: '',
+  date: '',
+  guestCount: '',
+  totalBudget: '',
+});
+assert(!missingFieldsVal.isValid, 'Rejects missing required fields');
+assert(!!missingFieldsVal.errors.name, 'Flags missing name');
+assert(!!missingFieldsVal.errors.city, 'Flags missing city');
+assert(!!missingFieldsVal.errors.date, 'Flags missing date');
+assert(!!missingFieldsVal.errors.guestCount, 'Flags missing guest count');
+assert(!!missingFieldsVal.errors.totalBudget, 'Flags missing budget');
+
+// Test: Invalid date format
+const invalidDateVal = validateEventRequirements({
+  name: 'Summer Gala',
+  city: 'Mumbai',
+  date: 'not-a-date',
+  guestCount: 100,
+  totalBudget: 200000,
+});
+assert(!invalidDateVal.isValid, 'Rejects invalid date strings');
+
+// Test: Valid event requirements
+const validEventVal = validateEventRequirements({
+  name: "Sarah's 30th Birthday",
+  city: 'Bengaluru',
+  date: '2026-12-15',
+  guestCount: 120,
+  totalBudget: 200000,
+});
+assert(validEventVal.isValid, 'Accepts properly configured event requirements without error');
+
+// 9. Adaptive Planning Demonstration (₹2,00,000 / 120 -> ₹1,50,000 / 160) (Requirement 3)
+console.log('\n[9] Testing Adaptive Planning Demonstration (120 guests @ ₹2,00,000 -> 160 guests @ ₹1,50,000)');
+const adaptiveDeltas = calculateAdaptiveDeltas(120, 200000, 160, 150000);
+
+assert(adaptiveDeltas.guestDelta === 40, 'Guest delta is exactly +40 guests', `Got ${adaptiveDeltas.guestDelta}`);
+assert(adaptiveDeltas.guestPercentage === 33.3, 'Guest percentage increase is +33.3%', `Got ${adaptiveDeltas.guestPercentage}%`);
+assert(adaptiveDeltas.budgetDelta === -50000, 'Budget reduction is exactly -₹50,000', `Got ${adaptiveDeltas.budgetDelta}`);
+assert(adaptiveDeltas.budgetPercentage === -25, 'Budget percentage reduction is exactly -25%', `Got ${adaptiveDeltas.budgetPercentage}%`);
+assert(adaptiveDeltas.origPerGuest === 1667, 'Original spending per guest is ₹1,667', `Got ${adaptiveDeltas.origPerGuest}`);
+assert(adaptiveDeltas.newPerGuest === 938, 'New spending per guest is ₹938', `Got ${adaptiveDeltas.newPerGuest}`);
+assert(adaptiveDeltas.perGuestDelta === -729, 'Per-guest spending drops by -₹729/guest', `Got ${adaptiveDeltas.perGuestDelta}`);
+assert(adaptiveDeltas.isSurgeStressScenario === true, 'Correctly flags high stress surge + budget compression scenario');
 
 console.log('\n======================================================');
 console.log(`TEST SUMMARY: ${passedTests}/${totalTests} Passed (${failedTests} Failed)`);

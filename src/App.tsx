@@ -15,12 +15,15 @@ import { RiskAdvisorView } from './components/Risks/RiskAdvisorView';
 import { CopilotView } from './components/Copilot/CopilotView';
 import { ReportsExportView } from './components/Export/ReportsExportView';
 import { SettingsView } from './components/Settings/SettingsView';
+import { AIActivityPanel } from './components/Common/AIActivityPanel';
+import { Activity } from 'lucide-react';
 
 export default function App() {
   const [events, setEvents] = useState<FestivoEvent[]>([]);
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isAiActivityOpen, setIsAiActivityOpen] = useState(false);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [notification, setNotification] = useState<string | null>(null);
 
@@ -125,6 +128,23 @@ export default function App() {
         </div>
       )}
 
+      {/* Global AI Activity Panel Drawer */}
+      <AIActivityPanel
+        isOpen={isAiActivityOpen}
+        onClose={() => setIsAiActivityOpen(false)}
+      />
+
+      {/* Floating Quick Trigger Button for Video Presentation */}
+      <button
+        onClick={() => setIsAiActivityOpen(true)}
+        className="fixed bottom-5 left-5 z-40 lg:hidden flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#2D112C] text-[#FAF7F2] text-xs font-semibold shadow-xl border border-[#D4AF37]/40 hover:bg-[#3D183B] transition-transform active:scale-95"
+        title="View live AI Activity and Operation Trace"
+      >
+        <Activity className="w-3.5 h-3.5 text-[#E0533C]" />
+        <span>AI Activity</span>
+        <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
+      </button>
+
       {/* Desktop Sidebar & Mobile Drawer */}
       <Sidebar
         currentTab={currentTab}
@@ -133,6 +153,7 @@ export default function App() {
         activeEvent={activeEvent}
         onSelectEvent={(id) => setActiveEventId(id)}
         onNewEvent={() => setCurrentTab('architect')}
+        onOpenAiActivity={() => setIsAiActivityOpen(true)}
         isOpen={isMobileNavOpen}
         onClose={() => setIsMobileNavOpen(false)}
       />
@@ -145,6 +166,7 @@ export default function App() {
           onOpenMobileMenu={() => setIsMobileNavOpen(true)}
           onNewEvent={() => setCurrentTab('architect')}
           onOpenAdaptive={() => setCurrentTab('adaptive')}
+          onOpenAiActivity={() => setIsAiActivityOpen(true)}
           isSimulated={activeEvent?.blueprint?.isSimulated}
         />
 

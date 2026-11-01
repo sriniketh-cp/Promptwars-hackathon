@@ -279,3 +279,128 @@ export function shiftTaskDeadlines(
     overdueTasksCount: overdueCount,
   };
 }
+
+
+/**
+ * Event requirements validation rules for live user input.
+ * Rejects negative/zero guests, negative/zero budgets, invalid dates, and missing required fields.
+ */
+export interface EventFormValidationErrors {
+  name?: string;
+  city?: string;
+  date?: string;
+  guestCount?: string;
+  totalBudget?: string;
+}
+
+export function validateEventRequirements(data: {
+  name: string;
+  city: string;
+  date: string;
+  guestCount: number | string;
+  totalBudget: number | string;
+}): {
+  isValid: boolean;
+  errors: EventFormValidationErrors;
+} {
+  const errors: EventFormValidationErrors = {};
+
+  // 1. Name validation
+  if (!data.name || data.name.trim() === '') {
+    errors.name = 'Event name is required.';
+  } else if (data.name.trim().length < 3) {
+    errors.name = 'Event name must be at least 3 characters.';
+  }
+
+  // 2. City validation
+  if (!data.city || data.city.trim() === '') {
+    errors.city = 'City or location is required.';
+  }
+
+  // 3. Date validation
+  if (!data.date || data.date.trim() === '') {
+    errors.date = 'Event date is required.';
+  } else {
+    const parsedDate = new Date(data.date);
+    if (isNaN(parsedDate.getTime())) {
+      errors.date = 'Please provide a valid date format (YYYY-MM-DD).';
+    } else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      parsedDate.setHours(0, 0, 0, 0);
+      if (parsedDate.getTime() < today.getTime()) {
+        errors.date = 'Celebration date cannot be in the past.';
+      }
+    }
+  }
+
+  // 4. Guest Count validation (reject zero, negative, float)
+  const guestsNum = Number(data.guestCount);
+  if (data.guestCount === '' || isNaN(guestsNum)) {
+    errors.guestCount = 'Guest count is required.';
+  } else if (guestsNum < 0) {
+    errors.guestCount = 'Guest count cannot be negative.';
+  } else if (guestsNum === 0) {
+    errors.guestCount = 'Guest count must be at least 1 attendee (cannot be zero).';
+  } else if (!Number.isInteger(guestsNum)) {
+    errors.guestCount = 'Guest count must be a whole number.';
+  }
+
+  // 5. Total Budget validation (reject zero, negative)
+  const budgetNum = Number(data.totalBudget);
+  if (data.totalBudget === '' || isNaN(budgetNum)) {
+    errors.totalBudget = 'Total budget is required.';
+  } else if (budgetNum < 0) {
+    errors.totalBudget = 'Budget cannot be negative.';
+  } else if (budgetNum === 0) {
+    errors.totalBudget = 'Budget must be greater than zero.';
+  }
+
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors,
+  };
+}
+
+/**
+ * Calculate dynamic deltas and per-head margin shifts between original and proposed plans.
+ */
+export function calculateAdaptiveDeltas(
+  origGuests: number,
+  origBudget: number,
+  newGuests: number,
+  newBudget: number
+): {
+  guestDelta: number;
+  guestPercentage: number;
+  budgetDelta: number;
+  budgetPercentage: number;
+  origPerGuest: number;
+  newPerGuest: number;
+  perGuestDelta: number;
+  perGuestPercentage: number;
+  isSurgeStressScenario: boolean;
+} {
+  const guestDelta = newGuests - origGuests;
+  const guestPercentage = origGuests > 0 ? Math.round((guestDelta / origGuests) * 1000) / 10 : 0;
+
+  const budgetDelta = newBudget - origBudget;
+  const budgetPercentage = origBudget > 0 ? Math.round((budgetDelta / origBudget) * 1000) / 10 : 0;
+
+  const origPerGuest = origGuests > 0 ? Math.round(origBudget / origGuests) : 0;
+  const newPerGuest = newGuests > 0 ? Math.round(newBudget / newGuests) : 0;
+  const perGuestDelta = newPerGuest - origPerGuest;
+  const perGuestPercentage = origPerGuest > 0 ? Math.round((perGuestDelta / origPerGuest) * 1000) / 10 : 0;
+
+  return {
+    guestDelta,
+    guestPercentage,
+    budgetDelta,
+    budgetPercentage,
+    origPerGuest,
+    newPerGuest,
+    perGuestDelta,
+    perGuestPercentage,
+    isSurgeStressScenario: guestDelta > 0 && budgetDelta < 0,
+  };
+}

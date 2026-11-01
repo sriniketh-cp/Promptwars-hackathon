@@ -14,6 +14,7 @@ import {
   Settings,
   PlusCircle,
   ChevronDown,
+  Activity,
 } from 'lucide-react';
 import { BrandMark } from '../Common/BrandMark';
 import { FestivoEvent } from '../../types';
@@ -39,6 +40,7 @@ interface SidebarProps {
   activeEvent: FestivoEvent | null;
   onSelectEvent: (eventId: string) => void;
   onNewEvent: () => void;
+  onOpenAiActivity?: () => void;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -50,6 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeEvent,
   onSelectEvent,
   onNewEvent,
+  onOpenAiActivity,
   isOpen,
   onClose,
 }) => {
@@ -100,45 +103,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="text-[11px] font-semibold text-[#7E6E74] uppercase tracking-wider mb-1.5 flex items-center justify-between">
             <span>Active Workspace</span>
             <button
-              onClick={onNewEvent}
-              className="text-[#E0533C] hover:text-[#C53F28] flex items-center gap-1 font-medium lowercase text-xs transition-colors"
-              title="Create new event"
+              onClick={() => {
+                onNewEvent();
+                onClose();
+              }}
+              className="text-[#E0533C] hover:text-[#C9432D] font-bold flex items-center gap-1 normal-case tracking-normal"
             >
               <PlusCircle className="w-3.5 h-3.5" />
               <span>new</span>
             </button>
           </div>
 
-          {activeEvent ? (
+          {events.length === 0 ? (
+            <div className="text-xs text-[#695A60] italic py-1">No events configured yet</div>
+          ) : (
             <div className="relative">
               <select
-                value={activeEvent.requirements.id}
+                value={activeEvent?.requirements.id || ''}
                 onChange={(e) => onSelectEvent(e.target.value)}
-                className="w-full text-xs font-medium text-[#2D112C] bg-white border border-[#DDD3C5] rounded-lg py-2 pl-3 pr-8 shadow-xs focus:outline-none focus:ring-1 focus:ring-[#2D112C] appearance-none truncate cursor-pointer"
+                className="w-full text-xs font-semibold bg-white border border-[#DDD3C5] rounded-lg px-3 py-2 pr-8 text-[#2D112C] appearance-none focus:outline-none focus:ring-1 focus:ring-[#2D112C] truncate cursor-pointer shadow-2xs"
               >
                 {events.map((ev) => (
                   <option key={ev.requirements.id} value={ev.requirements.id}>
-                    {ev.requirements.name} ({ev.requirements.guestCount} guests)
+                    {ev.requirements.name}
                   </option>
                 ))}
               </select>
-              <ChevronDown className="w-4 h-4 text-[#8C7A83] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <ChevronDown className="w-4 h-4 text-[#7E6E74] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
-          ) : (
-            <button
-              onClick={onNewEvent}
-              className="w-full py-2 px-3 bg-white border border-dashed border-[#C5B7A6] rounded-lg text-xs font-medium text-[#5E4E55] hover:bg-[#FAF7F2] transition-colors text-left"
-            >
-              + Create your first event
-            </button>
           )}
 
           {activeEvent && (
-            <div className="mt-2 flex items-center justify-between text-[11px] text-[#695A60]">
-              <span className="font-mono tabular-nums">
-                {activeEvent.requirements.date}
-              </span>
-              <span className="font-mono tabular-nums font-semibold text-[#2D112C]">
+            <div className="flex items-center justify-between text-[11px] font-mono text-[#7B6A71] mt-2 pt-2 border-t border-[#E5DDD2]/70">
+              <span>{activeEvent.requirements.date}</span>
+              <span className="font-semibold text-[#2D112C]">
                 {activeEvent.requirements.currency}{' '}
                 {activeEvent.requirements.totalBudget.toLocaleString()}
               </span>
@@ -147,10 +145,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentTab === item.id;
+
             return (
               <button
                 key={item.id}
@@ -160,23 +159,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
                   isActive
-                    ? 'bg-[#2D112C] text-[#FAF7F2] shadow-sm font-semibold'
-                    : 'text-[#4F3F46] hover:bg-[#EBE2D7] hover:text-[#2D112C]'
+                    ? 'bg-[#2D112C] text-[#FAF7F2] font-semibold shadow-2xs'
+                    : 'text-[#4A3C42] hover:bg-[#EBE2D7] hover:text-[#2D112C]'
                 }`}
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-3">
                   <Icon
-                    className={`w-4 h-4 shrink-0 ${
-                      isActive ? 'text-[#F97356]' : 'text-[#7B6A71]'
+                    className={`w-4 h-4 ${
+                      isActive ? 'text-[#F97356]' : 'text-[#85737B]'
                     }`}
                   />
-                  <span className="truncate">{item.label}</span>
+                  <span>{item.label}</span>
                 </div>
+
                 {item.badge && (
                   <span
-                    className={`text-[10px] px-2 py-0.5 rounded font-sans tracking-tight shrink-0 ${
+                    className={`text-[10px] px-2 py-0.5 rounded-full ${
                       isActive
-                        ? 'bg-[#E0533C] text-white font-semibold'
+                        ? 'bg-[#E0533C] text-white font-bold'
                         : 'bg-[#E8DFD4] text-[#7C3627] font-medium'
                     }`}
                   >
@@ -187,6 +187,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
             );
           })}
         </nav>
+
+        {/* AI Activity Trigger in Sidebar */}
+        {onOpenAiActivity && (
+          <div className="px-3 py-2 border-t border-[#E5DDD2] bg-[#FAF7F2]">
+            <button
+              onClick={() => {
+                onOpenAiActivity();
+                onClose();
+              }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold bg-[#2D112C] text-[#FAF7F2] hover:bg-[#3D183B] transition-colors shadow-2xs"
+            >
+              <div className="flex items-center gap-2">
+                <Activity className="w-3.5 h-3.5 text-[#E0533C]" />
+                <span>AI Activity Trace</span>
+              </div>
+              <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
+            </button>
+          </div>
+        )}
 
         {/* Footer info */}
         <div className="p-4 border-t border-[#E5DDD2] bg-[#FAF7F2] text-[11px] text-[#7E6F75]">

@@ -28,7 +28,7 @@ import {
   EventRisk,
 } from '../../types';
 import { api } from '../../services/api';
-import { formatCurrency } from '../../utils/calculations';
+import { formatCurrency, validateEventRequirements } from '../../utils/calculations';
 import { SimulationBadge } from '../Common/SimulationBadge';
 
 interface EventArchitectViewProps {
@@ -76,24 +76,39 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editedContent, setEditedContent] = useState('');
 
+  // Live Field Touched State for Inline Validation
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  // Compute live validation rules
+  const validation = validateEventRequirements({
+    name,
+    city,
+    date,
+    guestCount,
+    totalBudget,
+  });
+
+  const markTouched = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
   const handleNextToOptional = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      setErrorMsg('Please enter an event name');
+    // Mark all required fields as touched
+    setTouched({
+      name: true,
+      city: true,
+      date: true,
+      guestCount: true,
+      totalBudget: true,
+    });
+
+    if (!validation.isValid) {
+      const firstError = Object.values(validation.errors)[0];
+      setErrorMsg(firstError || 'Please resolve the highlighted validation errors before continuing.');
       return;
     }
-    if (!city.trim()) {
-      setErrorMsg('Please enter a city or location');
-      return;
-    }
-    if (!guestCount || guestCount <= 0) {
-      setErrorMsg('Please enter a valid guest count');
-      return;
-    }
-    if (!totalBudget || totalBudget <= 0) {
-      setErrorMsg('Please enter a valid budget');
-      return;
-    }
+
     setErrorMsg(null);
     setStep(2);
   };
@@ -345,6 +360,7 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Event Name */}
             <div>
               <label className="block text-xs font-semibold text-[#2D112C] mb-1">
                 Event Name *
@@ -353,12 +369,29 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
                 type="text"
                 required
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onBlur={() => markTouched('name')}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  markTouched('name');
+                }}
                 placeholder="e.g., Sarah's 30th Birthday Soirée"
-                className="w-full text-xs bg-[#FAF7F2] border border-[#DDD3C5] rounded-lg px-3.5 py-2.5 text-[#2D112C] focus:outline-none focus:ring-1 focus:ring-[#2D112C]"
+                className={`w-full text-xs rounded-lg px-3.5 py-2.5 text-[#2D112C] focus:outline-none transition-colors border ${
+                  touched.name && validation.errors.name
+                    ? 'border-[#DC2626] bg-[#FEF2F2] focus:ring-1 focus:ring-[#DC2626]'
+                    : touched.name && !validation.errors.name
+                    ? 'border-[#16A34A] bg-[#F0FDF4] focus:ring-1 focus:ring-[#16A34A]'
+                    : 'bg-[#FAF7F2] border-[#DDD3C5] focus:ring-1 focus:ring-[#2D112C]'
+                }`}
               />
+              {touched.name && validation.errors.name && (
+                <p className="text-[11px] font-medium text-[#DC2626] mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  <span>{validation.errors.name}</span>
+                </p>
+              )}
             </div>
 
+            {/* Celebration Type */}
             <div>
               <label className="block text-xs font-semibold text-[#2D112C] mb-1">
                 Celebration Type *
@@ -378,6 +411,7 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
               </select>
             </div>
 
+            {/* Event Date */}
             <div>
               <label className="block text-xs font-semibold text-[#2D112C] mb-1">
                 Event Date *
@@ -386,11 +420,28 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
                 type="date"
                 required
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full text-xs bg-[#FAF7F2] border border-[#DDD3C5] rounded-lg px-3.5 py-2.5 text-[#2D112C] focus:outline-none focus:ring-1 focus:ring-[#2D112C]"
+                onBlur={() => markTouched('date')}
+                onChange={(e) => {
+                  setDate(e.target.value);
+                  markTouched('date');
+                }}
+                className={`w-full text-xs rounded-lg px-3.5 py-2.5 text-[#2D112C] focus:outline-none transition-colors border ${
+                  touched.date && validation.errors.date
+                    ? 'border-[#DC2626] bg-[#FEF2F2] focus:ring-1 focus:ring-[#DC2626]'
+                    : touched.date && !validation.errors.date
+                    ? 'border-[#16A34A] bg-[#F0FDF4] focus:ring-1 focus:ring-[#16A34A]'
+                    : 'bg-[#FAF7F2] border-[#DDD3C5] focus:ring-1 focus:ring-[#2D112C]'
+                }`}
               />
+              {touched.date && validation.errors.date && (
+                <p className="text-[11px] font-medium text-[#DC2626] mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  <span>{validation.errors.date}</span>
+                </p>
+              )}
             </div>
 
+            {/* City / Location */}
             <div>
               <label className="block text-xs font-semibold text-[#2D112C] mb-1">
                 City / Location *
@@ -399,31 +450,64 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
                 type="text"
                 required
                 value={city}
-                onChange={(e) => setCity(e.target.value)}
+                onBlur={() => markTouched('city')}
+                onChange={(e) => {
+                  setCity(e.target.value);
+                  markTouched('city');
+                }}
                 placeholder="e.g., Bengaluru, Mumbai, London, New York"
-                className="w-full text-xs bg-[#FAF7F2] border border-[#DDD3C5] rounded-lg px-3.5 py-2.5 text-[#2D112C] focus:outline-none focus:ring-1 focus:ring-[#2D112C]"
+                className={`w-full text-xs rounded-lg px-3.5 py-2.5 text-[#2D112C] focus:outline-none transition-colors border ${
+                  touched.city && validation.errors.city
+                    ? 'border-[#DC2626] bg-[#FEF2F2] focus:ring-1 focus:ring-[#DC2626]'
+                    : touched.city && !validation.errors.city
+                    ? 'border-[#16A34A] bg-[#F0FDF4] focus:ring-1 focus:ring-[#16A34A]'
+                    : 'bg-[#FAF7F2] border-[#DDD3C5] focus:ring-1 focus:ring-[#2D112C]'
+                }`}
               />
+              {touched.city && validation.errors.city && (
+                <p className="text-[11px] font-medium text-[#DC2626] mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  <span>{validation.errors.city}</span>
+                </p>
+              )}
             </div>
 
+            {/* Expected Guests */}
             <div>
               <label className="block text-xs font-semibold text-[#2D112C] mb-1">
-                Expected Guests *
+                Expected Guests * (Min 1, no negatives or zero)
               </label>
               <input
                 type="number"
-                min="5"
-                max="5000"
                 required
                 value={guestCount}
-                onChange={(e) => setGuestCount(Number(e.target.value))}
-                className="w-full text-xs font-mono bg-[#FAF7F2] border border-[#DDD3C5] rounded-lg px-3.5 py-2.5 text-[#2D112C] focus:outline-none focus:ring-1 focus:ring-[#2D112C]"
+                onBlur={() => markTouched('guestCount')}
+                onChange={(e) => {
+                  setGuestCount(e.target.value === '' ? ('' as any) : Number(e.target.value));
+                  markTouched('guestCount');
+                }}
+                placeholder="e.g., 120"
+                className={`w-full text-xs font-mono rounded-lg px-3.5 py-2.5 text-[#2D112C] focus:outline-none transition-colors border ${
+                  touched.guestCount && validation.errors.guestCount
+                    ? 'border-[#DC2626] bg-[#FEF2F2] focus:ring-1 focus:ring-[#DC2626]'
+                    : touched.guestCount && !validation.errors.guestCount
+                    ? 'border-[#16A34A] bg-[#F0FDF4] focus:ring-1 focus:ring-[#16A34A]'
+                    : 'bg-[#FAF7F2] border-[#DDD3C5] focus:ring-1 focus:ring-[#2D112C]'
+                }`}
               />
+              {touched.guestCount && validation.errors.guestCount && (
+                <p className="text-[11px] font-medium text-[#DC2626] mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  <span>{validation.errors.guestCount}</span>
+                </p>
+              )}
             </div>
 
+            {/* Total Budget */}
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-xs font-semibold text-[#2D112C]">
-                  Total Budget *
+                  Total Budget * (Must be &gt; 0, no negatives)
                 </label>
                 <div className="flex items-center gap-1">
                   {['INR', 'USD', 'EUR', 'GBP'].map((curr) => (
@@ -444,12 +528,28 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
               </div>
               <input
                 type="number"
-                min="1000"
                 required
                 value={totalBudget}
-                onChange={(e) => setTotalBudget(Number(e.target.value))}
-                className="w-full text-xs font-mono bg-[#FAF7F2] border border-[#DDD3C5] rounded-lg px-3.5 py-2.5 text-[#2D112C] focus:outline-none focus:ring-1 focus:ring-[#2D112C]"
+                onBlur={() => markTouched('totalBudget')}
+                onChange={(e) => {
+                  setTotalBudget(e.target.value === '' ? ('' as any) : Number(e.target.value));
+                  markTouched('totalBudget');
+                }}
+                placeholder="e.g., 200000"
+                className={`w-full text-xs font-mono rounded-lg px-3.5 py-2.5 text-[#2D112C] focus:outline-none transition-colors border ${
+                  touched.totalBudget && validation.errors.totalBudget
+                    ? 'border-[#DC2626] bg-[#FEF2F2] focus:ring-1 focus:ring-[#DC2626]'
+                    : touched.totalBudget && !validation.errors.totalBudget
+                    ? 'border-[#16A34A] bg-[#F0FDF4] focus:ring-1 focus:ring-[#16A34A]'
+                    : 'bg-[#FAF7F2] border-[#DDD3C5] focus:ring-1 focus:ring-[#2D112C]'
+                }`}
               />
+              {touched.totalBudget && validation.errors.totalBudget && (
+                <p className="text-[11px] font-medium text-[#DC2626] mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  <span>{validation.errors.totalBudget}</span>
+                </p>
+              )}
             </div>
           </div>
 

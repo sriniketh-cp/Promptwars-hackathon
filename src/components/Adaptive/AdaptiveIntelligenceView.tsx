@@ -25,7 +25,7 @@ import {
   EventPlanRevision,
 } from '../../types';
 import { api } from '../../services/api';
-import { formatCurrency, shiftTaskDeadlines } from '../../utils/calculations';
+import { formatCurrency, shiftTaskDeadlines, calculateAdaptiveDeltas } from '../../utils/calculations';
 import { SimulationBadge } from '../Common/SimulationBadge';
 
 interface AdaptiveIntelligenceViewProps {
@@ -53,14 +53,22 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
   const [selectedRevision, setSelectedRevision] = useState<EventPlanRevision | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  // Quick Preset: Prompt Scenario (120 guests @ ₹2,00,000 -> 160 guests @ ₹1,70,000)
+  // Quick Preset: Prompt Scenario (120 guests @ ₹2,00,000 -> 160 guests @ ₹1,50,000)
   const loadExampleScenario = () => {
     setProposedGuests(160);
-    setProposedBudget(170000);
+    setProposedBudget(150000);
     setProposedDate(currentReq.date);
     setProposedOutdoor(true);
-    setChangeReason('Invited extended department & college batch (+40 guests) while reducing total budget by ₹30,000');
+    setChangeReason('Surge from 120 to 160 guests (+40) while reducing budget from ₹2,00,000 to ₹1,50,000 (-₹50,000)');
   };
+
+  // Compute live mathematical deltas using authoritative application code
+  const deltas = calculateAdaptiveDeltas(
+    currentReq.guestCount,
+    currentReq.totalBudget,
+    Number(proposedGuests) || currentReq.guestCount,
+    Number(proposedBudget) || currentReq.totalBudget
+  );
 
   // Run the analysis
   const handleAnalyze = async () => {
@@ -262,7 +270,7 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
           className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-[#FFF0ED] text-[#C53F28] hover:bg-[#FFE4DE] border border-[#F9C3B8] transition-colors shadow-2xs whitespace-nowrap"
         >
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Load Challenge Scenario (160 guests / ₹1.7L)</span>
+          <span>Load Challenge Scenario (160 guests / ₹1.5L)</span>
         </button>
       </div>
 
@@ -388,23 +396,70 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
           />
         </div>
 
+        {/* Live Mathematical Calculation Breakdown */}
+        <div className="p-4 rounded-xl bg-[#FAF7F2] border border-[#E5DDD2] space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-[#2D112C] uppercase tracking-wider flex items-center gap-1.5">
+              <Sliders className="w-3.5 h-3.5 text-[#E0533C]" />
+              Live Mathematical Impact Analysis
+            </span>
+            {deltas.isSurgeStressScenario && (
+              <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#FEF2F2] text-[#991B1B] border border-[#FCA5A5] flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3 text-[#DC2626]" />
+                Stress Scenario: Volume Surge + Budget Compression
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div className="p-3 bg-white rounded-lg border border-[#E5DDD2]">
+              <div className="text-[11px] text-[#695A60]">Guest Attendance Shift</div>
+              <div className="text-base font-mono font-bold text-[#2D112C] mt-0.5">
+                {currentReq.guestCount} → {proposedGuests}
+              </div>
+              <div className={`text-[11px] font-mono mt-0.5 font-semibold ${
+                deltas.guestDelta > 0 ? 'text-[#DC2626]' : deltas.guestDelta < 0 ? 'text-[#16A34A]' : 'text-[#695A60]'
+              }`}>
+                {deltas.guestDelta >= 0 ? '+' : ''}{deltas.guestDelta} guests ({deltas.guestPercentage >= 0 ? '+' : ''}{deltas.guestPercentage}%)
+              </div>
+            </div>
+
+            <div className="p-3 bg-white rounded-lg border border-[#E5DDD2]">
+              <div className="text-[11px] text-[#695A60]">Total Ceiling Budget</div>
+              <div className="text-base font-mono font-bold text-[#2D112C] mt-0.5">
+                {formatCurrency(currentReq.totalBudget, currentReq.currency)} → {formatCurrency(proposedBudget, currentReq.currency)}
+              </div>
+              <div className={`text-[11px] font-mono mt-0.5 font-semibold ${
+                deltas.budgetDelta < 0 ? 'text-[#DC2626]' : deltas.budgetDelta > 0 ? 'text-[#16A34A]' : 'text-[#695A60]'
+              }`}>
+                {deltas.budgetDelta >= 0 ? '+' : ''}{formatCurrency(deltas.budgetDelta, currentReq.currency)} ({deltas.budgetPercentage >= 0 ? '+' : ''}{deltas.budgetPercentage}%)
+              </div>
+            </div>
+
+            <div className="p-3 bg-white rounded-lg border border-[#E5DDD2]">
+              <div className="text-[11px] text-[#695A60]">Per-Guest Spending Capacity</div>
+              <div className="text-base font-mono font-bold text-[#2D112C] mt-0.5">
+                {formatCurrency(deltas.origPerGuest, currentReq.currency)} → {formatCurrency(deltas.newPerGuest, currentReq.currency)}
+              </div>
+              <div className={`text-[11px] font-mono mt-0.5 font-semibold ${
+                deltas.perGuestDelta < 0 ? 'text-[#DC2626]' : deltas.perGuestDelta > 0 ? 'text-[#16A34A]' : 'text-[#695A60]'
+              }`}>
+                {deltas.perGuestDelta >= 0 ? '+' : ''}{formatCurrency(deltas.perGuestDelta, currentReq.currency)} ({deltas.perGuestPercentage >= 0 ? '+' : ''}{deltas.perGuestPercentage}%)
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Submit Action */}
-        <div className="flex items-center justify-between pt-3 border-t border-[#E5DDD2]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[#E5DDD2]">
           <div className="text-xs text-[#695A60]">
-            Effective per-guest budget moves from{' '}
-            <strong className="font-mono text-[#2D112C]">
-              {formatCurrency(Math.round(currentReq.totalBudget / currentReq.guestCount), currentReq.currency)}
-            </strong>{' '}
-            to{' '}
-            <strong className="font-mono text-[#2D112C]">
-              {formatCurrency(Math.round(proposedBudget / proposedGuests), currentReq.currency)}
-            </strong>
+            Ready to evaluate multi-variable ripple effects across catering, venue, decor, and tasks.
           </div>
 
           <button
             onClick={handleAnalyze}
             disabled={isAnalyzing}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-semibold bg-[#2D112C] text-[#FAF7F2] hover:bg-[#3D183B] disabled:opacity-50 transition-colors shadow-2xs"
+            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-xs font-semibold bg-[#2D112C] text-[#FAF7F2] hover:bg-[#3D183B] disabled:opacity-50 transition-colors shadow-2xs whitespace-nowrap"
           >
             {isAnalyzing ? (
               <>
