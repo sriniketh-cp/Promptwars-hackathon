@@ -331,6 +331,8 @@ Rules:
     config: {
       systemInstruction: 'You are Festivo AI Architect, generating pristine JSON celebration plans.',
       responseMimeType: 'application/json',
+      thinkingConfig: { thinkingBudget: 0 },
+      maxOutputTokens: 4096,
       responseSchema: {
         type: Type.OBJECT,
         properties: {
@@ -521,6 +523,8 @@ Explain the concrete trade-offs for each category, identify smart cost-saving su
     config: {
       systemInstruction: 'You are Festivo AI Budget Optimizer. Return pristine JSON only.',
       responseMimeType: 'application/json',
+      thinkingConfig: { thinkingBudget: 0 },
+      maxOutputTokens: 2048,
       responseSchema: {
         type: Type.OBJECT,
         properties: {
@@ -662,6 +666,8 @@ Analysis Directives:
     config: {
       systemInstruction: 'You are Festivo AI Adaptive Intelligence Engine. Return pristine JSON proposal.',
       responseMimeType: 'application/json',
+      thinkingConfig: { thinkingBudget: 0 },
+      maxOutputTokens: 3072,
       responseSchema: {
         type: Type.OBJECT,
         properties: {
@@ -904,6 +910,8 @@ Provide:
     config: {
       systemInstruction: 'You are Festivo AI Vendor Specialist. Return pristine JSON analysis.',
       responseMimeType: 'application/json',
+      thinkingConfig: { thinkingBudget: 0 },
+      maxOutputTokens: 2048,
       responseSchema: {
         type: Type.OBJECT,
         properties: {
@@ -992,7 +1000,8 @@ Provide 3 high-impact, actionable recommendations referencing these exact number
   const geminiResult = await callGeminiWithRetry({
     contents: contextPrompt,
     config: {
-      maxOutputTokens: 400,
+      maxOutputTokens: 2048,
+      thinkingConfig: { thinkingBudget: 0 },
       temperature: 0.7,
     },
   });
