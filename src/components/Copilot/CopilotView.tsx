@@ -207,7 +207,7 @@ export const CopilotView: React.FC<CopilotViewProps> = ({
             <div className="bg-[#FAF7F2] border border-[#E5DDD2] rounded-2xl p-4 text-xs flex items-center gap-2">
               <div className="w-3 h-3 border-2 border-[#2D112C]/20 border-t-[#2D112C] rounded-full animate-spin" />
               <span className="text-[#695A60]">
-                Reasoning across your event data with Gemini 3.8 Flash...
+                Reasoning across your event data with Gemini 3.6 Flash...
               </span>
             </div>
           </div>

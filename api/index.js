@@ -559,22 +559,27 @@ if (apiKey && apiKey !== "MY_GEMINI_API_KEY" && apiKey.trim() !== "") {
 } else {
   console.log("No GEMINI_API_KEY detected. Demo simulation mode active.");
 }
+var lastGeminiError = null;
 async function callGeminiWithRetry(params) {
-  if (!aiClient) return null;
+  if (!aiClient) {
+    lastGeminiError = "No API key configured (aiClient is null)";
+    return null;
+  }
   const candidateModels = [
     "gemini-3.6-flash",
     "gemini-3.8-flash"
   ];
   const startTime = Date.now();
-  const MAX_TOTAL_MS = 6e3;
+  const MAX_TOTAL_MS = 9e3;
   for (const model of candidateModels) {
     const elapsed = Date.now() - startTime;
     const remainingTime = MAX_TOTAL_MS - elapsed;
     if (remainingTime < 1500) {
       console.warn("[Gemini]: Time window depleted, engaging deterministic simulation fallback.");
+      lastGeminiError = "Time window depleted (>9000ms)";
       break;
     }
-    const perCallTimeout = Math.min(remainingTime - 400, 5e3);
+    const perCallTimeout = Math.min(remainingTime - 400, 8e3);
     try {
       const responsePromise = aiClient.models.generateContent({
         model,
@@ -586,13 +591,16 @@ async function callGeminiWithRetry(params) {
       );
       const response = await Promise.race([responsePromise, timeoutPromise]);
       if (response && response.text) {
+        lastGeminiError = null;
         return { text: response.text, modelUsed: model };
       }
     } catch (err) {
       const msg = String(err?.message || err);
       console.warn(`[Gemini error on ${model}]:`, msg);
+      lastGeminiError = `[${model}]: ${msg}`;
       if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota") || msg.includes("Quota") || msg.includes("rate-limit")) {
         console.warn("[Gemini]: Quota exceeded on API key. Transitioning immediately to simulation fallback.");
+        lastGeminiError = `Quota exceeded (429 RESOURCE_EXHAUSTED): ${msg}`;
         break;
       }
       continue;
@@ -1418,7 +1426,9 @@ You can run our **"What Changed?"** engine to model these exact trade-offs!`;
   }
   return res.json({
     content: answer,
-    isSimulated: true
+    isSimulated: true,
+    modelUsed: "gemini-3.6-flash",
+    fallbackReason: lastGeminiError || "Simulation fallback engaged"
   });
 });
 async function startServer() {

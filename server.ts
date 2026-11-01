@@ -85,11 +85,16 @@ if (apiKey && apiKey !== 'MY_GEMINI_API_KEY' && apiKey.trim() !== '') {
  * Resilient Gemini API invocation helper with exponential backoff and automatic retry
  * Resolves transient 503 high demand or 429 rate limit spikes
  */
+let lastGeminiError: string | null = null;
+
 async function callGeminiWithRetry(params: {
   contents: any;
   config?: any;
 }): Promise<{ text: string; modelUsed: string } | null> {
-  if (!aiClient) return null;
+  if (!aiClient) {
+    lastGeminiError = 'No API key configured (aiClient is null)';
+    return null;
+  }
 
   // Real fast Gemini models with graceful fallbacks
   const candidateModels = [
@@ -98,17 +103,18 @@ async function callGeminiWithRetry(params: {
   ];
 
   const startTime = Date.now();
-  const MAX_TOTAL_MS = 6000; // Stay strictly under Vercel's 10-second serverless execution timeout
+  const MAX_TOTAL_MS = 9000; // Stay strictly under Vercel's 10-15s serverless execution timeout
 
   for (const model of candidateModels) {
     const elapsed = Date.now() - startTime;
     const remainingTime = MAX_TOTAL_MS - elapsed;
     if (remainingTime < 1500) {
       console.warn('[Gemini]: Time window depleted, engaging deterministic simulation fallback.');
+      lastGeminiError = 'Time window depleted (>9000ms)';
       break;
     }
 
-    const perCallTimeout = Math.min(remainingTime - 400, 5000);
+    const perCallTimeout = Math.min(remainingTime - 400, 8000);
 
     try {
       const responsePromise = aiClient.models.generateContent({
@@ -124,11 +130,13 @@ async function callGeminiWithRetry(params: {
       const response = await Promise.race([responsePromise, timeoutPromise]);
 
       if (response && response.text) {
+        lastGeminiError = null;
         return { text: response.text, modelUsed: model };
       }
     } catch (err: any) {
       const msg = String(err?.message || err);
       console.warn(`[Gemini error on ${model}]:`, msg);
+      lastGeminiError = `[${model}]: ${msg}`;
 
       // If quota is exhausted (429 / RESOURCE_EXHAUSTED), break immediately.
       // Trying other models on an exhausted quota key will just waste precious seconds.
@@ -140,6 +148,7 @@ async function callGeminiWithRetry(params: {
         msg.includes('rate-limit')
       ) {
         console.warn('[Gemini]: Quota exceeded on API key. Transitioning immediately to simulation fallback.');
+        lastGeminiError = `Quota exceeded (429 RESOURCE_EXHAUSTED): ${msg}`;
         break;
       }
       continue;
@@ -1034,6 +1043,8 @@ Directives:
   return res.json({
     content: answer,
     isSimulated: true,
+    modelUsed: 'gemini-3.6-flash',
+    fallbackReason: lastGeminiError || 'Simulation fallback engaged',
   });
 });
 
