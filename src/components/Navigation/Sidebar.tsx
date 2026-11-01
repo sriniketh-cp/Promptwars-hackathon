@@ -89,9 +89,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Main Sidebar */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-[#F6F1EA] border-r border-[#E5DDD2] flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-[#F6F1EA] border-r border-[#E5DDD2] flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         {/* Brand Header */}
         <div className="p-5 border-b border-[#E5DDD2] bg-[#FAF7F2]">
@@ -157,28 +156,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onSelectTab(item.id as NavTab);
                   onClose();
                 }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                  isActive
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-medium transition-all ${isActive
                     ? 'bg-[#2D112C] text-[#FAF7F2] font-semibold shadow-2xs'
                     : 'text-[#4A3C42] hover:bg-[#EBE2D7] hover:text-[#2D112C]'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <Icon
-                    className={`w-4 h-4 ${
-                      isActive ? 'text-[#F97356]' : 'text-[#85737B]'
-                    }`}
+                    className={`w-4 h-4 ${isActive ? 'text-[#F97356]' : 'text-[#85737B]'
+                      }`}
                   />
                   <span>{item.label}</span>
                 </div>
 
                 {item.badge && (
                   <span
-                    className={`text-[10px] px-2 py-0.5 rounded-full ${
-                      isActive
+                    className={`text-[10px] px-2 py-0.5 rounded-full ${isActive
                         ? 'bg-[#E0533C] text-white font-bold'
                         : 'bg-[#E8DFD4] text-[#7C3627] font-medium'
-                    }`}
+                      }`}
                   >
                     {item.badge}
                   </span>

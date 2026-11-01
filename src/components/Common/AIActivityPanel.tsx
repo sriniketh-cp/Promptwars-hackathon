@@ -416,3 +416,4 @@ export const AIActivityPanel: React.FC<AIActivityPanelProps> = ({ isOpen, onClos
     </div>
   );
 };
+
