@@ -92,7 +92,12 @@ async function callGeminiWithRetry(params: {
   if (!aiClient) return null;
 
   // Real fast Gemini models with graceful fallbacks
-  const candidateModels = ['gemini-3.8-flash'];
+  const candidateModels = [
+    'gemini-3.8-flash',
+    'gemini-3.8-flash-lite',
+    'gemini-3.6-flash',
+    'gemini-3.8-pro',
+  ];
 
   for (const model of candidateModels) {
     try {
@@ -137,7 +142,7 @@ app.get('/api/health', (req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
   });
 });
-// Diagnostic test endpoint — makes a live Gemini call
+// Diagnostic test endpoint — tests all available Gemini models
 app.get('/api/test-gemini', async (req: Request, res: Response) => {
   const rawKey = process.env.GEMINI_API_KEY;
   if (!aiClient) {
@@ -148,20 +153,44 @@ app.get('/api/test-gemini', async (req: Request, res: Response) => {
       apiKeyValue: rawKey ? rawKey.substring(0, 8) + '...' : 'MISSING',
     });
   }
-  // Use the same model and timeout as callGeminiWithRetry
-  const model = 'gemini-3.8-flash';
-  try {
-    const resp = await Promise.race([
-      aiClient.models.generateContent({ model, contents: 'Reply with exactly: OK' }),
-      new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout after 25s')), 25000)),
-    ]);
-    if (resp && resp.text) {
-      return res.json({ success: true, model, response: resp.text.trim() });
+
+  const testModels = [
+    'gemini-3.8-flash',
+    'gemini-3.8-flash-lite',
+    'gemini-3.6-flash',
+    'gemini-3.8-pro',
+  ];
+
+  const results: any[] = [];
+  for (const model of testModels) {
+    try {
+      const resp = await Promise.race([
+        aiClient.models.generateContent({ model, contents: 'Reply with exactly: OK' }),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout after 8s')), 8000)),
+      ]);
+      if (resp && resp.text) {
+        results.push({ model, success: true, response: resp.text.trim() });
+      } else {
+        results.push({ model, success: false, reason: 'empty response' });
+      }
+    } catch (e: any) {
+      const msg = e?.message || String(e);
+      const isQuota = msg.includes('429') || msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED');
+      results.push({
+        model,
+        success: false,
+        quotaExceeded: isQuota,
+        error: msg.length > 200 ? msg.substring(0, 200) + '...' : msg,
+      });
     }
-    return res.json({ success: false, model, reason: 'empty response from Gemini' });
-  } catch (e: any) {
-    return res.json({ success: false, model, error: e?.message || String(e) });
   }
+
+  const working = results.find((r) => r.success);
+  return res.json({
+    workingModel: working ? working.model : null,
+    allModelsExhausted: !working,
+    results,
+  });
 });
 
 // List all events

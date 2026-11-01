@@ -561,7 +561,12 @@ if (apiKey && apiKey !== "MY_GEMINI_API_KEY" && apiKey.trim() !== "") {
 }
 async function callGeminiWithRetry(params) {
   if (!aiClient) return null;
-  const candidateModels = ["gemini-3.8-flash"];
+  const candidateModels = [
+    "gemini-3.8-flash",
+    "gemini-3.8-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-3.8-pro"
+  ];
   for (const model of candidateModels) {
     try {
       const responsePromise = aiClient.models.generateContent({
@@ -605,19 +610,41 @@ app.get("/api/test-gemini", async (req, res) => {
       apiKeyValue: rawKey ? rawKey.substring(0, 8) + "..." : "MISSING"
     });
   }
-  const model = "gemini-3.8-flash";
-  try {
-    const resp = await Promise.race([
-      aiClient.models.generateContent({ model, contents: "Reply with exactly: OK" }),
-      new Promise((_, rej) => setTimeout(() => rej(new Error("timeout after 25s")), 25e3))
-    ]);
-    if (resp && resp.text) {
-      return res.json({ success: true, model, response: resp.text.trim() });
+  const testModels = [
+    "gemini-3.8-flash",
+    "gemini-3.8-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-3.8-pro"
+  ];
+  const results = [];
+  for (const model of testModels) {
+    try {
+      const resp = await Promise.race([
+        aiClient.models.generateContent({ model, contents: "Reply with exactly: OK" }),
+        new Promise((_, rej) => setTimeout(() => rej(new Error("timeout after 8s")), 8e3))
+      ]);
+      if (resp && resp.text) {
+        results.push({ model, success: true, response: resp.text.trim() });
+      } else {
+        results.push({ model, success: false, reason: "empty response" });
+      }
+    } catch (e) {
+      const msg = e?.message || String(e);
+      const isQuota = msg.includes("429") || msg.includes("quota") || msg.includes("RESOURCE_EXHAUSTED");
+      results.push({
+        model,
+        success: false,
+        quotaExceeded: isQuota,
+        error: msg.length > 200 ? msg.substring(0, 200) + "..." : msg
+      });
     }
-    return res.json({ success: false, model, reason: "empty response from Gemini" });
-  } catch (e) {
-    return res.json({ success: false, model, error: e?.message || String(e) });
   }
+  const working = results.find((r) => r.success);
+  return res.json({
+    workingModel: working ? working.model : null,
+    allModelsExhausted: !working,
+    results
+  });
 });
 app.get("/api/events", (req, res) => {
   const events = loadEvents();
