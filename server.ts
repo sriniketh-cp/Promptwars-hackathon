@@ -93,8 +93,8 @@ async function callGeminiWithRetry(params: {
 
   // Real fast Gemini models with graceful fallbacks
   const candidateModels = [
+    'gemini-3.6-flash',
     'gemini-3.8-flash',
-    'gemini-3.8-flash-lite',
   ];
 
   const startTime = Date.now();
@@ -108,7 +108,7 @@ async function callGeminiWithRetry(params: {
       break;
     }
 
-    const perCallTimeout = Math.min(remainingTime - 400, model === 'gemini-3.8-flash' ? 4500 : 2000);
+    const perCallTimeout = Math.min(remainingTime - 400, 5000);
 
     try {
       const responsePromise = aiClient.models.generateContent({
@@ -160,7 +160,7 @@ app.get('/api/health', (req: Request, res: Response) => {
     hasApiKey: !!aiClient,
     apiKeyConfigured: isKeyConfigured,
     apiKeyPrefix: isKeyConfigured ? rawKey.substring(0, 6) + '...' : 'none',
-    model: 'gemini-3.8-flash',
+    model: 'gemini-3.6-flash',
     timestamp: new Date().toISOString(),
   });
 });

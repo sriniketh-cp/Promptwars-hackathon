@@ -104,7 +104,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <Sparkles className="w-4 h-4 text-[#E0533C]" />
             </div>
             <div className="space-y-1 text-[#695A60]">
-              <div>Model: <strong className="font-mono text-[#2D112C]">gemini-3.8-flash</strong></div>
+              <div>Model: <strong className="font-mono text-[#2D112C]">gemini-3.6-flash</strong></div>
               <div>SDK: <strong className="font-mono text-[#2D112C]">@google/genai &gt;= 2.25.0</strong></div>
               <div>Call Pattern: <strong className="text-[#2D112C]">Server-Side Only (Express proxy)</strong></div>
               <div className="flex items-center gap-1.5 pt-1">

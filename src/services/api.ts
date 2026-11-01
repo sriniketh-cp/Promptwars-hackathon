@@ -67,7 +67,7 @@ function generateFallbackBlueprint(reqs: EventRequirements) {
       { description: 'Guest turnout exceeding RSVP count by >15%', category: 'guest', likelihood: 'medium', impact: 'medium', mitigationStrategy: 'Contract caterer with 10% plate buffer clause', contingencyPlan: 'Release auxiliary buffet chafers and reserve seating' },
     ],
     isSimulated: true,
-    modelUsed: 'gemini-3.8-flash',
+    modelUsed: 'gemini-3.6-flash',
   };
 }
 
@@ -185,7 +185,7 @@ export const api = {
       if (!res.ok) throw new Error('Health check failed');
       return await res.json();
     } catch {
-      return { status: 'offline', hasApiKey: false, model: 'gemini-3.8-flash' };
+      return { status: 'offline', hasApiKey: false, model: 'gemini-3.6-flash' };
     }
   },
 
@@ -300,7 +300,7 @@ export const api = {
     const logId = aiActivityTracker.logStart({
       operation: 'Event Blueprint Generation',
       endpoint: '/api/gemini/generate-blueprint',
-      model: 'gemini-3.8-flash',
+      model: 'gemini-3.6-flash',
       input: {
         eventName: requirements.name,
         type: requirements.type,
@@ -329,7 +329,7 @@ export const api = {
           id: logId,
           response: data,
           isSimulated: data.blueprint?.isSimulated || data.isSimulated,
-          modelUsed: data.modelUsed || 'gemini-3.8-flash',
+          modelUsed: data.modelUsed || 'gemini-3.6-flash',
           latencyMs,
         });
         return data;
@@ -346,7 +346,7 @@ export const api = {
       id: logId,
       response: fallback,
       isSimulated: true,
-      modelUsed: 'gemini-3.8-flash',
+      modelUsed: 'gemini-3.6-flash',
       latencyMs,
     });
     return fallback;
@@ -358,7 +358,7 @@ export const api = {
     const logId = aiActivityTracker.logStart({
       operation: 'Budget Adaptation & Proportional Allocation',
       endpoint: '/api/gemini/budget-adaptation',
-      model: 'gemini-3.8-flash',
+      model: 'gemini-3.6-flash',
       input: {
         eventName: event.requirements.name,
         currentBudget: event.requirements.totalBudget,
@@ -385,7 +385,7 @@ export const api = {
           id: logId,
           response: data,
           isSimulated: data.isSimulated,
-          modelUsed: data.modelUsed || 'gemini-3.8-flash',
+          modelUsed: data.modelUsed || 'gemini-3.6-flash',
           latencyMs,
         });
         return data;
@@ -421,7 +421,7 @@ export const api = {
         'Request complimentary tea/coffee stations from catering in exchange for punctual payment milestones.'
       ],
       isSimulated: true,
-      modelUsed: 'gemini-3.8-flash',
+      modelUsed: 'gemini-3.6-flash',
     };
 
     const latencyMs = Math.round(performance.now() - startTime);
@@ -429,7 +429,7 @@ export const api = {
       id: logId,
       response: fallback,
       isSimulated: true,
-      modelUsed: 'gemini-3.8-flash',
+      modelUsed: 'gemini-3.6-flash',
       latencyMs,
     });
     return fallback;
@@ -449,7 +449,7 @@ export const api = {
     const logId = aiActivityTracker.logStart({
       operation: 'Adaptive Intelligence ("What Changed?")',
       endpoint: '/api/gemini/adaptive-intelligence',
-      model: 'gemini-3.8-flash',
+      model: 'gemini-3.6-flash',
       input: {
         eventName: origReq.name,
         originalGuests: origReq.guestCount,
@@ -481,7 +481,7 @@ export const api = {
           id: logId,
           response: data,
           isSimulated: data.isSimulated,
-          modelUsed: data.modelUsed || 'gemini-3.8-flash',
+          modelUsed: data.modelUsed || 'gemini-3.6-flash',
           latencyMs,
         });
         return data;
@@ -496,7 +496,7 @@ export const api = {
       id: logId,
       response: fallbackProposal,
       isSimulated: true,
-      modelUsed: 'gemini-3.8-flash',
+      modelUsed: 'gemini-3.6-flash',
       latencyMs,
     });
     return fallbackProposal;
@@ -512,7 +512,7 @@ export const api = {
     const logId = aiActivityTracker.logStart({
       operation: 'Vendor Quotation Intelligence',
       endpoint: '/api/gemini/vendor-analysis',
-      model: 'gemini-3.8-flash',
+      model: 'gemini-3.6-flash',
       input: {
         category,
         quotesAnalyzed: quotes.map((q) => ({
@@ -543,7 +543,7 @@ export const api = {
         id: logId,
         response: data,
         isSimulated: data.isSimulated,
-        modelUsed: data.modelUsed || 'gemini-3.8-flash',
+        modelUsed: data.modelUsed || 'gemini-3.6-flash',
         latencyMs,
       });
 
@@ -561,7 +561,7 @@ export const api = {
     const logId = aiActivityTracker.logStart({
       operation: 'AI Event Copilot',
       endpoint: '/api/gemini/copilot',
-      model: 'gemini-3.8-flash',
+      model: 'gemini-3.6-flash',
       input: {
         userQuery,
         conversationHistoryCount: messages.length,
@@ -586,7 +586,7 @@ export const api = {
           id: logId,
           response: data,
           isSimulated: data.isSimulated,
-          modelUsed: data.modelUsed || 'gemini-3.8-flash',
+          modelUsed: data.modelUsed || 'gemini-3.6-flash',
           latencyMs,
         });
         return data;
@@ -598,7 +598,7 @@ export const api = {
     const fallback = {
       message: `I've analyzed **${currentEvent.requirements.name}** (${currentEvent.requirements.currency} ${currentEvent.requirements.totalBudget.toLocaleString()} for ${currentEvent.requirements.guestCount} guests).\n\nTo optimize spending without impacting guest enjoyment:\n1. **Decoration:** Shift from full floral canopies to focal backdrops and fairy lights (potential savings: ~₹8,000 - 10,000).\n2. **Entertainment:** A solo acoustic performer or curated playlist instead of a multi-piece live band (potential savings: ~₹4,000).\n3. **Catering:** Streamline dessert courses to 1 signature item (saves ~₹40/plate).\n\nYou can run our **What Changed?** engine to model these exact trade-offs!`,
       isSimulated: true,
-      modelUsed: 'gemini-3.8-flash',
+      modelUsed: 'gemini-3.6-flash',
     };
 
     const latencyMs = Math.round(performance.now() - startTime);
@@ -606,7 +606,7 @@ export const api = {
       id: logId,
       response: fallback,
       isSimulated: true,
-      modelUsed: 'gemini-3.8-flash',
+      modelUsed: 'gemini-3.6-flash',
       latencyMs,
     });
     return fallback;

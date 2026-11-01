@@ -67,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Model status tag */}
         <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#F2ECE3] text-[#4A3D43] text-xs font-mono border border-[#DDD3C5]">
           <Sparkles className="w-3 h-3 text-[#E0533C]" />
-          <span>gemini-3.8-flash</span>
+          <span>gemini-3.6-flash</span>
           {isSimulated && (
             <span className="text-[10px] text-[#A66C00] font-sans font-medium">· Demo mode</span>
           )}

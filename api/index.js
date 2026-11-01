@@ -562,8 +562,8 @@ if (apiKey && apiKey !== "MY_GEMINI_API_KEY" && apiKey.trim() !== "") {
 async function callGeminiWithRetry(params) {
   if (!aiClient) return null;
   const candidateModels = [
-    "gemini-3.8-flash",
-    "gemini-3.8-flash-lite"
+    "gemini-3.6-flash",
+    "gemini-3.8-flash"
   ];
   const startTime = Date.now();
   const MAX_TOTAL_MS = 6e3;
@@ -574,7 +574,7 @@ async function callGeminiWithRetry(params) {
       console.warn("[Gemini]: Time window depleted, engaging deterministic simulation fallback.");
       break;
     }
-    const perCallTimeout = Math.min(remainingTime - 400, model === "gemini-3.8-flash" ? 4500 : 2e3);
+    const perCallTimeout = Math.min(remainingTime - 400, 5e3);
     try {
       const responsePromise = aiClient.models.generateContent({
         model,
@@ -608,7 +608,7 @@ app.get("/api/health", (req, res) => {
     hasApiKey: !!aiClient,
     apiKeyConfigured: isKeyConfigured,
     apiKeyPrefix: isKeyConfigured ? rawKey.substring(0, 6) + "..." : "none",
-    model: "gemini-3.8-flash",
+    model: "gemini-3.6-flash",
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
 });

@@ -8,7 +8,7 @@ export interface AIActivityItem {
   id: string;
   operation: string; // e.g. 'Adaptive Intelligence ("What Changed?")'
   endpoint: string; // e.g. '/api/gemini/adaptive-intelligence'
-  model: string; // e.g. 'gemini-3.8-flash'
+  model: string; // e.g. 'gemini-3.6-flash'
   status: 'loading' | 'success' | 'error';
   timestamp: string;
   latencyMs?: number;
@@ -101,7 +101,7 @@ class AIActivityTracker {
       id,
       operation: params.operation,
       endpoint: params.endpoint,
-      model: params.model || 'gemini-3.8-flash',
+      model: params.model || 'gemini-3.6-flash',
       status: 'loading',
       timestamp: timeFormatted,
       input: sanitizedInput,
