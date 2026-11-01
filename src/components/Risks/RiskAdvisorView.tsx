@@ -3,12 +3,9 @@ import {
   ShieldAlert,
   Plus,
   AlertTriangle,
-  CheckCircle2,
   Trash2,
   Edit2,
-  Sparkles,
   ShieldCheck,
-  ShieldX,
 } from 'lucide-react';
 import { EventRisk, FestivoEvent, RiskImpact, RiskLikelihood } from '../../types';
 import { calculateRiskSeverity } from '../../utils/calculations';
@@ -22,7 +19,6 @@ export const RiskAdvisorView: React.FC<RiskAdvisorViewProps> = ({
   event,
   onUpdateEvent,
 }) => {
-  const req = event.requirements;
   const risks = event.risks || [];
 
   const [filterCategory, setFilterCategory] = useState<string>('all');

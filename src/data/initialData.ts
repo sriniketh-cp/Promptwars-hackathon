@@ -404,8 +404,16 @@ export const SAMPLE_BIRTHDAY_EVENT: FestivoEvent = {
       isSimulated: false,
       suggestedAction: {
         type: 'open_what_changed',
-        label: 'Test "What Changed?" (160 guests / ₹1.7L budget)',
+        label: 'Test "What Changed?" (160 guests / ₹1.5L budget)',
       }
     }
   ]
 };
+
+// Populate baseline revision snapshot with complete event data for seamless restoration
+SAMPLE_BIRTHDAY_EVENT.revisions[0].snapshot = JSON.parse(
+  JSON.stringify({
+    ...SAMPLE_BIRTHDAY_EVENT,
+    revisions: [],
+  })
+);

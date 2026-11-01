@@ -24,8 +24,18 @@ let memoryEvents: FestivoEvent[] = [SAMPLE_BIRTHDAY_EVENT];
 
 app.use(express.json({ limit: '10mb' }));
 
+// Production Security Headers
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  next();
+});
+
 // Normalize URL in case Vercel rewrites strip /api prefix
-app.use((req, res, next) => {
+app.use((req, _res, next) => {
   if (!req.url.startsWith('/api')) {
     req.url = '/api' + req.url;
   }
@@ -134,7 +144,7 @@ async function callGeminiWithRetry(params: {
 // ----------------- REST API ROUTES ----------------- //
 
 // Health and capability status
-app.get('/api/health', (req: Request, res: Response) => {
+app.get('/api/health', (_req: Request, res: Response) => {
   const rawKey = process.env.GEMINI_API_KEY;
   const isKeyConfigured = !!(rawKey && rawKey !== 'MY_GEMINI_API_KEY' && rawKey.trim() !== '');
   res.json({
@@ -148,7 +158,7 @@ app.get('/api/health', (req: Request, res: Response) => {
   });
 });
 // Direct live test endpoint for gemini-3.6-flash
-app.get('/api/debug-gemini', async (req: Request, res: Response) => {
+app.get('/api/debug-gemini', async (_req: Request, res: Response) => {
   const start = Date.now();
   if (!aiClient) {
     return res.json({ success: false, reason: 'aiClient is null - GEMINI_API_KEY is not set or invalid' });
@@ -178,7 +188,7 @@ app.get('/api/debug-gemini', async (req: Request, res: Response) => {
 });
 
 // Diagnostic test endpoint — tests all available Gemini models
-app.get('/api/test-gemini', async (req: Request, res: Response) => {
+app.get('/api/test-gemini', async (_req: Request, res: Response) => {
   const rawKey = process.env.GEMINI_API_KEY;
   if (!aiClient) {
     return res.json({
@@ -229,7 +239,7 @@ app.get('/api/test-gemini', async (req: Request, res: Response) => {
 });
 
 // List all events
-app.get('/api/events', (req: Request, res: Response) => {
+app.get('/api/events', (_req: Request, res: Response) => {
   const events = loadEvents();
   res.json(events);
 });
@@ -285,7 +295,7 @@ app.delete('/api/events/:id', (req: Request, res: Response) => {
 });
 
 // Reset demo event
-app.post('/api/events/:id/reset-demo', (req: Request, res: Response) => {
+app.post('/api/events/:id/reset-demo', (_req: Request, res: Response) => {
   let events = loadEvents();
   events = events.filter((e) => e.requirements.id !== SAMPLE_BIRTHDAY_EVENT.requirements.id);
   events.unshift(SAMPLE_BIRTHDAY_EVENT);
@@ -975,7 +985,7 @@ Provide:
 
 // 5. Context-Aware AI Copilot
 app.post('/api/gemini/copilot', async (req: Request, res: Response) => {
-  const { messages, currentEvent, userQuery } = req.body;
+  const { currentEvent, userQuery } = req.body;
 
   if (!currentEvent || !userQuery) {
     return res.status(400).json({ error: 'Missing currentEvent or userQuery' });
@@ -1053,7 +1063,7 @@ async function startServer() {
   } else {
     const distPath = path.join(__dirname, 'dist');
     app.use(express.static(distPath));
-    app.get('*', (req: Request, res: Response) => {
+    app.get('*', (_req: Request, res: Response) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
     console.log('Serving production static build from dist');

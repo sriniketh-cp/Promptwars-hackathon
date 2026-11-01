@@ -410,17 +410,23 @@ var SAMPLE_BIRTHDAY_EVENT = {
       isSimulated: false,
       suggestedAction: {
         type: "open_what_changed",
-        label: 'Test "What Changed?" (160 guests / \u20B91.7L budget)'
+        label: 'Test "What Changed?" (160 guests / \u20B91.5L budget)'
       }
     }
   ]
 };
+SAMPLE_BIRTHDAY_EVENT.revisions[0].snapshot = JSON.parse(
+  JSON.stringify({
+    ...SAMPLE_BIRTHDAY_EVENT,
+    revisions: []
+  })
+);
 
 // src/utils/calculations.ts
 function formatCurrency(amount, currency = "INR", locale = "en-IN") {
   if (isNaN(amount) || !isFinite(amount)) return "0";
   try {
-    return new Intl.NumberFormat(currency === "INR" ? "en-IN" : "en-US", {
+    return new Intl.NumberFormat(locale || (currency === "INR" ? "en-IN" : "en-US"), {
       style: "currency",
       currency: currency || "INR",
       maximumFractionDigits: 0,
@@ -431,18 +437,13 @@ function formatCurrency(amount, currency = "INR", locale = "en-IN") {
     return `${symbol}${amount.toLocaleString()}`;
   }
 }
-function calculateTotalAllocated(categories) {
-  return categories.reduce((sum, cat) => sum + (Number(cat.allocatedAmount) || 0), 0);
-}
 function calculateBudgetReduction(categories, newTotalBudget, currentTotalBudget) {
   const reductionAmount = Math.max(0, currentTotalBudget - newTotalBudget);
   const percentageReduction = currentTotalBudget > 0 ? reductionAmount / currentTotalBudget * 100 : 0;
   const warnings = [];
-  const totalAllocated = calculateTotalAllocated(categories);
   const fixedCategories = categories.filter((c) => c.isFixedCost || c.confirmedQuote > 0);
   const flexibleCategories = categories.filter((c) => !c.isFixedCost && c.confirmedQuote === 0);
   const fixedSum = fixedCategories.reduce((sum, c) => sum + c.allocatedAmount, 0);
-  const flexibleSum = flexibleCategories.reduce((sum, c) => sum + c.allocatedAmount, 0);
   if (newTotalBudget < fixedSum) {
     warnings.push(
       `Fixed obligations and confirmed vendor deposits (totaling ${formatCurrency(
@@ -514,7 +515,15 @@ var DATA_DIR = process.env.VERCEL ? path.join(os.tmpdir(), "festivo-data") : pat
 var EVENTS_FILE = path.join(DATA_DIR, "events.json");
 var memoryEvents = [SAMPLE_BIRTHDAY_EVENT];
 app.use(express.json({ limit: "10mb" }));
-app.use((req, res, next) => {
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  next();
+});
+app.use((req, _res, next) => {
   if (!req.url.startsWith("/api")) {
     req.url = "/api" + req.url;
   }
@@ -593,7 +602,7 @@ async function callGeminiWithRetry(params) {
   }
   return null;
 }
-app.get("/api/health", (req, res) => {
+app.get("/api/health", (_req, res) => {
   const rawKey = process.env.GEMINI_API_KEY;
   const isKeyConfigured = !!(rawKey && rawKey !== "MY_GEMINI_API_KEY" && rawKey.trim() !== "");
   res.json({
@@ -606,7 +615,7 @@ app.get("/api/health", (req, res) => {
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
 });
-app.get("/api/debug-gemini", async (req, res) => {
+app.get("/api/debug-gemini", async (_req, res) => {
   const start = Date.now();
   if (!aiClient) {
     return res.json({ success: false, reason: "aiClient is null - GEMINI_API_KEY is not set or invalid" });
@@ -633,7 +642,7 @@ app.get("/api/debug-gemini", async (req, res) => {
     });
   }
 });
-app.get("/api/test-gemini", async (req, res) => {
+app.get("/api/test-gemini", async (_req, res) => {
   const rawKey = process.env.GEMINI_API_KEY;
   if (!aiClient) {
     return res.json({
@@ -679,7 +688,7 @@ app.get("/api/test-gemini", async (req, res) => {
     results
   });
 });
-app.get("/api/events", (req, res) => {
+app.get("/api/events", (_req, res) => {
   const events = loadEvents();
   res.json(events);
 });
@@ -725,7 +734,7 @@ app.delete("/api/events/:id", (req, res) => {
   saveEvents(events);
   res.json({ success: true });
 });
-app.post("/api/events/:id/reset-demo", (req, res) => {
+app.post("/api/events/:id/reset-demo", (_req, res) => {
   let events = loadEvents();
   events = events.filter((e) => e.requirements.id !== SAMPLE_BIRTHDAY_EVENT.requirements.id);
   events.unshift(SAMPLE_BIRTHDAY_EVENT);
@@ -1370,7 +1379,7 @@ Provide:
   });
 });
 app.post("/api/gemini/copilot", async (req, res) => {
-  const { messages, currentEvent, userQuery } = req.body;
+  const { currentEvent, userQuery } = req.body;
   if (!currentEvent || !userQuery) {
     return res.status(400).json({ error: "Missing currentEvent or userQuery" });
   }
@@ -1442,7 +1451,7 @@ async function startServer() {
   } else {
     const distPath = path.join(__dirname, "dist");
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
+    app.get("*", (_req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
     console.log("Serving production static build from dist");

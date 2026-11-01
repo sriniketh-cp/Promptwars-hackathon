@@ -3,14 +3,9 @@ import {
   Store,
   Plus,
   Trash2,
-  FileText,
   Sparkles,
   AlertTriangle,
   HelpCircle,
-  CheckCircle,
-  Building2,
-  Check,
-  ChevronDown,
 } from 'lucide-react';
 import {
   Vendor,
@@ -491,6 +486,34 @@ export const VendorCoordinationView: React.FC<VendorCoordinationViewProps> = ({
                           type="text"
                           value={quoteCancellation}
                           onChange={(e) => setQuoteCancellation(e.target.value)}
+                          className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-[#695A60] mb-1">Deposit Required</label>
+                        <input
+                          type="number"
+                          value={quoteDeposit}
+                          onChange={(e) => setQuoteDeposit(Number(e.target.value))}
+                          className="w-full text-xs font-mono p-2 rounded-lg border border-[#DDD3C5] bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-[#695A60] mb-1">Quote Validity Date</label>
+                        <input
+                          type="date"
+                          value={quoteValidity}
+                          onChange={(e) => setQuoteValidity(e.target.value)}
+                          className="w-full text-xs font-mono p-2 rounded-lg border border-[#DDD3C5] bg-white"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] text-[#695A60] mb-1">Availability Notes</label>
+                        <input
+                          type="text"
+                          value={quoteAvailability}
+                          onChange={(e) => setQuoteAvailability(e.target.value)}
+                          placeholder="e.g., Confirmed available for event date"
                           className="w-full text-xs p-2 rounded-lg border border-[#DDD3C5] bg-white"
                         />
                       </div>

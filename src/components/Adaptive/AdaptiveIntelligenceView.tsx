@@ -1,21 +1,15 @@
 import React, { useState } from 'react';
 import {
   RefreshCw,
-  Users,
-  Wallet,
-  Calendar,
   AlertTriangle,
   CheckCircle2,
-  XCircle,
   History,
   RotateCcw,
   Sparkles,
-  ArrowRight,
   ShieldAlert,
   ListTodo,
   Check,
   X,
-  FileText,
   Sliders,
 } from 'lucide-react';
 import {
@@ -44,13 +38,11 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
   const [proposedBudget, setProposedBudget] = useState<number>(currentReq.totalBudget);
   const [proposedDate, setProposedDate] = useState<string>(currentReq.date);
   const [proposedOutdoor, setProposedOutdoor] = useState<boolean>(currentReq.isOutdoor);
-  const [proposedTheme, setProposedTheme] = useState<string>(currentReq.theme);
   const [changeReason, setChangeReason] = useState<string>('Guest surge & budget revision');
 
   // Proposal State
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeProposal, setActiveProposal] = useState<PlanRevisionProposal | null>(null);
-  const [selectedRevision, setSelectedRevision] = useState<EventPlanRevision | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   // Quick Preset: Prompt Scenario (120 guests @ ₹2,00,000 -> 160 guests @ ₹1,50,000)
@@ -81,7 +73,7 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
       totalBudget: Number(proposedBudget),
       date: proposedDate,
       isOutdoor: proposedOutdoor,
-      theme: proposedTheme,
+      theme: currentReq.theme,
     };
 
     try {
@@ -246,7 +238,6 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
   const restoreRevision = (rev: EventPlanRevision) => {
     if (!rev.snapshot) return;
     onUpdateEvent(rev.snapshot);
-    setSelectedRevision(null);
     setStatusMessage(`Restored event plan back to revision saved on ${new Date(rev.timestamp).toLocaleString()}`);
   };
 
@@ -546,20 +537,9 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
             </h4>
             <div className="space-y-2.5">
               {activeProposal.affectedBudgetCategories.map((cat, idx) => (
-                <div
+                <label
                   key={idx}
-                  role="checkbox"
-                  tabIndex={0}
-                  aria-checked={cat.approved}
-                  aria-label={`Toggle adjustment for ${cat.categoryName}`}
-                  onClick={() => toggleBudgetAdjustment(idx)}
-                  onKeyDown={(e) => {
-                    if (e.key === ' ' || e.key === 'Enter') {
-                      e.preventDefault();
-                      toggleBudgetAdjustment(idx);
-                    }
-                  }}
-                  className={`p-3.5 rounded-lg border transition-all cursor-pointer flex items-start justify-between gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C] ${
+                  className={`p-3.5 rounded-lg border transition-all cursor-pointer flex items-start justify-between gap-4 ${
                     cat.approved
                       ? 'bg-[#FFF9F6] border-[#F97356]/40'
                       : 'bg-white border-[#E5DDD2] opacity-60'
@@ -569,8 +549,9 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
                     <input
                       type="checkbox"
                       checked={!!cat.approved}
-                      onChange={() => {}}
-                      className="mt-0.5 accent-[#2D112C]"
+                      onChange={() => toggleBudgetAdjustment(idx)}
+                      aria-label={`Toggle adjustment for ${cat.categoryName}`}
+                      className="mt-0.5 accent-[#2D112C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
                     />
                     <div>
                       <div className="flex items-center gap-2">
@@ -600,7 +581,7 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
                       {formatCurrency(cat.proposedAmount, currentReq.currency)}
                     </div>
                   </div>
-                </div>
+                </label>
               ))}
             </div>
           </div>
@@ -615,28 +596,18 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
               </h4>
               <div className="space-y-2">
                 {activeProposal.affectedTasks.map((t, idx) => (
-                  <div
+                  <label
                     key={idx}
-                    role="checkbox"
-                    tabIndex={0}
-                    aria-checked={!!t.approved}
-                    aria-label={`Toggle task adjustment for ${t.title}`}
-                    onClick={() => toggleTaskAdjustment(idx)}
-                    onKeyDown={(e) => {
-                      if (e.key === ' ' || e.key === 'Enter') {
-                        e.preventDefault();
-                        toggleTaskAdjustment(idx);
-                      }
-                    }}
-                    className={`p-2.5 rounded-lg border transition-all cursor-pointer flex items-start gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C] ${
+                    className={`p-2.5 rounded-lg border transition-all cursor-pointer flex items-start gap-2.5 ${
                       t.approved ? 'bg-white border-[#DDD3C5]' : 'bg-[#F2ECE3] border-[#E5DDD2] opacity-60'
                     }`}
                   >
                     <input
                       type="checkbox"
                       checked={!!t.approved}
-                      onChange={() => {}}
-                      className="mt-0.5 accent-[#2D112C]"
+                      onChange={() => toggleTaskAdjustment(idx)}
+                      aria-label={`Toggle task adjustment for ${t.title}`}
+                      className="mt-0.5 accent-[#2D112C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
                     />
                     <div className="text-xs min-w-0">
                       <div className="font-semibold text-[#2D112C] truncate">
@@ -644,7 +615,7 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
                       </div>
                       <p className="text-[11px] text-[#695A60]">{t.rationale}</p>
                     </div>
-                  </div>
+                  </label>
                 ))}
               </div>
             </div>
@@ -657,28 +628,18 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
               </h4>
               <div className="space-y-2">
                 {activeProposal.newRisks.map((r, idx) => (
-                  <div
+                  <label
                     key={idx}
-                    role="checkbox"
-                    tabIndex={0}
-                    aria-checked={!!r.approved}
-                    aria-label={`Toggle risk adjustment for ${r.description}`}
-                    onClick={() => toggleRiskAdjustment(idx)}
-                    onKeyDown={(e) => {
-                      if (e.key === ' ' || e.key === 'Enter') {
-                        e.preventDefault();
-                        toggleRiskAdjustment(idx);
-                      }
-                    }}
-                    className={`p-2.5 rounded-lg border transition-all cursor-pointer flex items-start gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C] ${
+                    className={`p-2.5 rounded-lg border transition-all cursor-pointer flex items-start gap-2.5 ${
                       r.approved ? 'bg-white border-[#DDD3C5]' : 'bg-[#F2ECE3] border-[#E5DDD2] opacity-60'
                     }`}
                   >
                     <input
                       type="checkbox"
                       checked={!!r.approved}
-                      onChange={() => {}}
-                      className="mt-0.5 accent-[#2D112C]"
+                      onChange={() => toggleRiskAdjustment(idx)}
+                      aria-label={`Toggle risk adjustment for ${r.description}`}
+                      className="mt-0.5 accent-[#2D112C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
                     />
                     <div className="text-xs min-w-0">
                       <div className="font-semibold text-[#2D112C]">{r.description}</div>
@@ -687,7 +648,7 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
                         {r.mitigation}
                       </p>
                     </div>
-                  </div>
+                  </label>
                 ))}
               </div>
             </div>
@@ -754,10 +715,11 @@ export const AdaptiveIntelligenceView: React.FC<AdaptiveIntelligenceViewProps> =
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                {rev.snapshot?.requirements && (
+                {rev.snapshot && rev.snapshot.requirements && (
                   <button
                     onClick={() => restoreRevision(rev)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-[#2D112C] border border-[#DDD3C5] hover:bg-[#F2ECE3] transition-colors"
+                    aria-label={`Restore Revision #${idx + 1}`}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-[#2D112C] border border-[#DDD3C5] hover:bg-[#F2ECE3] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
                   >
                     <RotateCcw className="w-3.5 h-3.5 text-[#E0533C]" />
                     <span>Restore</span>

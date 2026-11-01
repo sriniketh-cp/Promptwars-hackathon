@@ -53,6 +53,8 @@ const testCategories: BudgetCategory[] = [
 ];
 
 const totalAllocated = calculateTotalAllocated(testCategories);
+const totalEstimated = calculateTotalEstimated(testCategories);
+assert(totalEstimated === 200000, 'Sum of estimated costs equals ₹2,00,000');
 assert(totalAllocated === 200000, 'Sum of allocated amounts equals ₹2,00,000', `Got ${totalAllocated}`);
 
 const totalConfirmed = calculateTotalConfirmed(testCategories);
@@ -121,6 +123,9 @@ const sampleTasks: EventTask[] = [
 const shiftResult = shiftTaskDeadlines(sampleTasks, '2026-11-28', '2026-12-08');
 assert(shiftResult.dayDelta === 10, 'Deterministic date delta is exactly +10 days', `Got ${shiftResult.dayDelta}`);
 assert(shiftResult.shiftedTasks[0].dueDate === '2026-11-20', 'Task 1 dueDate shifted forward by 10 days to 2026-11-20', `Got ${shiftResult.shiftedTasks[0].dueDate}`);
+const taskMetrics = calculateTaskSummary(sampleTasks, '2026-11-28');
+assert(taskMetrics.total === 2, 'Task summary reflects total task count');
+assert(taskMetrics.completed === 1, 'Task summary records 1 completed task');
 
 // 6. Risk Severity Formula (1-9)
 console.log('\n[6] Testing Risk Severity Scoring Matrix');
@@ -132,6 +137,19 @@ assert(medScore === 6, 'Medium likelihood (2) × High impact (3) = 6 (High)', `G
 
 const lowScore = calculateRiskSeverity('low', 'low');
 assert(lowScore === 1, 'Low likelihood (1) × Low impact (1) = 1 (Minor)', `Got ${lowScore}`);
+const structuredRisk: EventRisk = {
+  id: 'r-sample',
+  description: 'Heavy rain forecasted on lawn',
+  category: 'weather',
+  likelihood: 'high',
+  impact: 'high',
+  severityScore: criticalScore,
+  affectedTasks: ['t1'],
+  mitigationStrategy: 'Erect waterproof marquee',
+  contingencyPlan: 'Shift to indoor banquet hall',
+  status: 'identified',
+};
+assert(structuredRisk.severityScore === 9, 'Structured EventRisk model preserves severity score 9');
 
 // 7. Revisions & Snapshot Restoration
 console.log('\n[7] Testing Revisions & Snapshot Restoration');
@@ -141,7 +159,7 @@ const modifiedEvent = {
   requirements: {
     ...originalEventSnapshot.requirements,
     guestCount: 160,
-    totalBudget: 170000,
+    totalBudget: 150000,
   },
 };
 
@@ -394,6 +412,16 @@ assert(clampedNegativeBudget === 150000, 'Negative budget is clamped to default 
 
 const nanBudget = sanitizeNumericAmount(NaN, 150000, 100, 10000000);
 assert(nanBudget === 150000, 'NaN input defaults safely to fallback amount');
+const dirtyPayload = {
+  name: '<script>alert(\"hack\")</script>Milestone Gala',
+  guestCount: 160,
+  nested: {
+    notes: '<b>Exclusive</b><img src=\"x\" onerror=\"1\"/>'
+  }
+};
+const cleanedPayload = sanitizeEventPayload(dirtyPayload);
+assert(!cleanedPayload.name.includes('<script>'), 'Deep sanitizes nested string fields');
+assert(!cleanedPayload.nested.notes.includes('<b>'), 'Deep sanitizes object properties');
 
 console.log('\n======================================================');
 console.log(`TEST SUMMARY: ${passedTests}/${totalTests} Passed (${failedTests} Failed)`);

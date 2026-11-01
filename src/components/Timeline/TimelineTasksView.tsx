@@ -2,16 +2,10 @@ import React, { useState } from 'react';
 import {
   CheckSquare,
   Plus,
-  Clock,
-  AlertCircle,
   CheckCircle2,
-  Calendar,
   Trash2,
   Edit2,
-  Flag,
   User,
-  ArrowRight,
-  Filter,
 } from 'lucide-react';
 import { EventTask, FestivoEvent, TaskPriority, TaskStatus } from '../../types';
 import { calculateTaskSummary } from '../../utils/calculations';

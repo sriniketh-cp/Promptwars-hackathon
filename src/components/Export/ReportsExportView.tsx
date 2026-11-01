@@ -1,16 +1,5 @@
 import React from 'react';
-import {
-  FileSpreadsheet,
-  Printer,
-  Download,
-  Share2,
-  Calendar,
-  Wallet,
-  Users,
-  ShieldAlert,
-  Building2,
-  CheckCircle2,
-} from 'lucide-react';
+import { FileSpreadsheet, Printer, Download } from 'lucide-react';
 import { FestivoEvent } from '../../types';
 import {
   formatCurrency,
@@ -123,6 +112,20 @@ export const ReportsExportView: React.FC<ReportsExportViewProps> = ({ event }) =
               <strong className="text-[#2D112C] block mb-1">Atmospheric Concept</strong>
               <p>{event.blueprint?.themeRationale || 'Custom styling and lighting curation'}</p>
             </div>
+            <div className="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#E5DDD2] md:col-span-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div>
+                <strong className="text-[#2D112C] block">Guest Status</strong>
+                <span className="text-[#695A60]">
+                  {guestSummary.confirmed} confirmed · {guestSummary.pending} pending · {guestSummary.declined} declined
+                </span>
+              </div>
+              <div className="sm:text-right">
+                <strong className="text-[#2D112C] block">Milestone Tracking</strong>
+                <span className="text-[#695A60]">
+                  {taskSummary.completed} of {taskSummary.total} completed ({taskSummary.todo} todo)
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -132,7 +135,7 @@ export const ReportsExportView: React.FC<ReportsExportViewProps> = ({ event }) =
             2. Budget Ledger & Category Breakdown
           </h2>
 
-          <div className="grid grid-cols-3 gap-3 text-xs mb-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs mb-3">
             <div className="p-3 bg-[#FAF7F2] rounded-lg border border-[#E5DDD2]">
               <span className="text-[#695A60] block text-[11px]">Total Ceiling</span>
               <strong className="font-mono text-[#2D112C] text-sm">
@@ -149,6 +152,12 @@ export const ReportsExportView: React.FC<ReportsExportViewProps> = ({ event }) =
               <span className="text-[#695A60] block text-[11px]">Vendor Commitments</span>
               <strong className="font-mono text-[#D97706] text-sm">
                 {formatCurrency(totalConfirmed, req.currency)}
+              </strong>
+            </div>
+            <div className="p-3 bg-[#FAF7F2] rounded-lg border border-[#E5DDD2]">
+              <span className="text-[#695A60] block text-[11px]">Actual Disbursed</span>
+              <strong className="font-mono text-[#16A34A] text-sm">
+                {formatCurrency(totalActual, req.currency)}
               </strong>
             </div>
           </div>

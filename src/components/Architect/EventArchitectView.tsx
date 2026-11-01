@@ -1,19 +1,12 @@
 import React, { useState } from 'react';
 import {
   Wand2,
-  Calendar,
-  MapPin,
-  Users,
-  Wallet,
   Sparkles,
-  CheckCircle,
   AlertCircle,
   Edit2,
   Save,
-  RotateCcw,
   ArrowRight,
   ShieldAlert,
-  ListTodo,
   DollarSign,
   ChevronRight,
   Check,
@@ -29,17 +22,16 @@ import {
 } from '../../types';
 import { api } from '../../services/api';
 import { formatCurrency, validateEventRequirements } from '../../utils/calculations';
-import { sanitizeInput } from '../../utils/security';
 import { SimulationBadge } from '../Common/SimulationBadge';
 
 interface EventArchitectViewProps {
   onEventCreated: (event: FestivoEvent) => void;
-  activeEvent: FestivoEvent | null;
+  activeEvent?: FestivoEvent | null;
 }
 
 export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
   onEventCreated,
-  activeEvent,
+  activeEvent: _activeEvent,
 }) => {
   const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Required, 2: Optional, 3: Generated Blueprint
   const [isGenerating, setIsGenerating] = useState(false);
@@ -158,30 +150,43 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
       );
 
       // Normalize tasks
-      const normalizedTasks: EventTask[] = (result.tasks || []).map((t: { title: string; description?: string; dueDate?: string; priority?: EventTask['priority']; relatedCategory?: string; isMilestone?: boolean }, i: number) => ({
-        id: `task-${i}-${Date.now()}`,
-        title: t.title,
-        description: t.description || '',
-        dueDate: t.dueDate || requirements.date,
-        priority: (t.priority as any) || 'medium',
-        status: 'todo',
-        owner: 'Event Host',
-        relatedCategory: t.relatedCategory || 'General',
-        dependencies: [],
-        isMilestone: !!t.isMilestone,
-      }));
+      const normalizedTasks: EventTask[] = (result.tasks || []).map((t: { title: string; description?: string; dueDate?: string; priority?: EventTask['priority']; relatedCategory?: string; isMilestone?: boolean }, i: number) => {
+        const rawPriority = t.priority?.toLowerCase();
+        const priority: EventTask['priority'] = rawPriority && ['low', 'medium', 'high', 'critical'].includes(rawPriority)
+          ? (rawPriority as EventTask['priority'])
+          : 'medium';
+
+        return {
+          id: `task-${i}-${Date.now()}`,
+          title: t.title,
+          description: t.description || '',
+          dueDate: t.dueDate || requirements.date,
+          priority,
+          status: 'todo',
+          owner: 'Event Host',
+          relatedCategory: t.relatedCategory || 'General',
+          dependencies: [],
+          isMilestone: !!t.isMilestone,
+        };
+      });
 
       // Normalize risks
       const normalizedRisks: EventRisk[] = (result.risks || []).map((r: { description: string; category?: EventRisk['category']; likelihood?: string; impact?: string; mitigationStrategy?: string; contingencyPlan?: string }, i: number) => {
-        const likelihood = (r.likelihood?.toLowerCase() || 'medium') as any;
-        const impact = (r.impact?.toLowerCase() || 'medium') as any;
+        const rawLikelihood = r.likelihood?.toLowerCase();
+        const likelihood: EventRisk['likelihood'] = rawLikelihood === 'high' || rawLikelihood === 'low' ? rawLikelihood : 'medium';
+        const rawImpact = r.impact?.toLowerCase();
+        const impact: EventRisk['impact'] = rawImpact === 'high' || rawImpact === 'low' ? rawImpact : 'medium';
         const score = (likelihood === 'high' ? 3 : likelihood === 'medium' ? 2 : 1) *
           (impact === 'high' ? 3 : impact === 'medium' ? 2 : 1);
+        const rawCat = r.category?.toLowerCase();
+        const category: EventRisk['category'] = rawCat && ['logistics', 'vendor', 'budget', 'weather', 'technical'].includes(rawCat)
+          ? (rawCat as EventRisk['category'])
+          : 'logistics';
 
         return {
           id: `risk-${i}-${Date.now()}`,
           description: r.description,
-          category: (r.category as any) || 'logistics',
+          category,
           likelihood,
           impact,
           severityScore: score,
@@ -278,6 +283,9 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
         },
       ],
     };
+
+    // Ensure baseline revision holds complete restorable snapshot
+    newEvent.revisions[0].snapshot = JSON.parse(JSON.stringify(newEvent));
 
     onEventCreated(newEvent);
   };
@@ -665,6 +673,19 @@ export const EventArchitectView: React.FC<EventArchitectViewProps> = ({
                 value={accessibility}
                 onChange={(e) => setAccessibility(e.target.value)}
                 placeholder="e.g., Wheelchair ramp, step-free restrooms, elder seating"
+                className="w-full text-xs bg-[#FAF7F2] border border-[#DDD3C5] rounded-lg px-3.5 py-2.5 text-[#2D112C] focus:outline-none focus:ring-1 focus:ring-[#2D112C]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#2D112C] mb-1">
+                Cultural & Religious Traditions
+              </label>
+              <input
+                type="text"
+                value={culturalPreferences}
+                onChange={(e) => setCulturalPreferences(e.target.value)}
+                placeholder="e.g., Traditional Indian rituals, Halal catering, Kosher, Celtic blessing"
                 className="w-full text-xs bg-[#FAF7F2] border border-[#DDD3C5] rounded-lg px-3.5 py-2.5 text-[#2D112C] focus:outline-none focus:ring-1 focus:ring-[#2D112C]"
               />
             </div>

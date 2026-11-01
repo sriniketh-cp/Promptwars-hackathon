@@ -3,16 +3,10 @@ import {
   CalendarDays,
   Plus,
   Trash2,
-  Copy,
   RotateCcw,
-  Users,
-  Wallet,
-  ArrowRight,
-  Sparkles,
 } from 'lucide-react';
 import { FestivoEvent } from '../../types';
 import { formatCurrency } from '../../utils/calculations';
-import { SimulationBadge } from '../Common/SimulationBadge';
 
 interface MyEventsViewProps {
   events: FestivoEvent[];

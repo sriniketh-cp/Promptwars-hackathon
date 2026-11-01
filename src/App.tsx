@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { FestivoEvent } from './types';
 import { api } from './services/api';
 import { Sidebar, NavTab } from './components/Navigation/Sidebar';

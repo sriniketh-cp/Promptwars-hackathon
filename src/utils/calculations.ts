@@ -16,7 +16,7 @@ export function formatCurrency(
   if (isNaN(amount) || !isFinite(amount)) return '0';
 
   try {
-    return new Intl.NumberFormat(currency === 'INR' ? 'en-IN' : 'en-US', {
+    return new Intl.NumberFormat(locale || (currency === 'INR' ? 'en-IN' : 'en-US'), {
       style: 'currency',
       currency: currency || 'INR',
       maximumFractionDigits: 0,
@@ -90,12 +90,10 @@ export function calculateBudgetReduction(
   const percentageReduction = currentTotalBudget > 0 ? (reductionAmount / currentTotalBudget) * 100 : 0;
   const warnings: string[] = [];
 
-  const totalAllocated = calculateTotalAllocated(categories);
   const fixedCategories = categories.filter((c) => c.isFixedCost || c.confirmedQuote > 0);
   const flexibleCategories = categories.filter((c) => !c.isFixedCost && c.confirmedQuote === 0);
 
   const fixedSum = fixedCategories.reduce((sum, c) => sum + c.allocatedAmount, 0);
-  const flexibleSum = flexibleCategories.reduce((sum, c) => sum + c.allocatedAmount, 0);
 
   if (newTotalBudget < fixedSum) {
     warnings.push(
@@ -211,7 +209,7 @@ export function calculateGuestSummary(guests: Guest[]) {
 /**
  * Calculate task metrics.
  */
-export function calculateTaskSummary(tasks: EventTask[], eventDateStr: string) {
+export function calculateTaskSummary(tasks: EventTask[], eventDateStr?: string) {
   const total = tasks.length;
   const completed = tasks.filter((t) => t.status === 'completed').length;
   const inProgress = tasks.filter((t) => t.status === 'in_progress').length;
@@ -221,6 +219,9 @@ export function calculateTaskSummary(tasks: EventTask[], eventDateStr: string) {
   const today = new Date().toISOString().split('T')[0];
   const overdue = tasks.filter((t) => t.status !== 'completed' && t.dueDate < today).length;
   const upcoming = tasks.filter((t) => t.status !== 'completed' && t.dueDate >= today).length;
+  const daysUntilEvent = eventDateStr
+    ? Math.ceil((new Date(eventDateStr).getTime() - new Date(today).getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
 
   return {
     total,
@@ -230,6 +231,7 @@ export function calculateTaskSummary(tasks: EventTask[], eventDateStr: string) {
     blocked,
     overdue,
     upcoming,
+    daysUntilEvent,
     completionPercentage: total > 0 ? Math.round((completed / total) * 100) : 0,
   };
 }

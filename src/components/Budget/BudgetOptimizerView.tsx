@@ -7,23 +7,16 @@ import {
   Check,
   AlertTriangle,
   TrendingDown,
-  Sparkles,
-  RefreshCw,
-  Sliders,
-  DollarSign,
   Lock,
   Unlock,
-  ShieldCheck,
 } from 'lucide-react';
 import { BudgetCategory, FestivoEvent } from '../../types';
 import {
   formatCurrency,
   calculateTotalAllocated,
-  calculateTotalEstimated,
   calculateTotalConfirmed,
   calculateTotalActual,
   calculateRemainingBudget,
-  calculateBudgetReduction,
 } from '../../utils/calculations';
 import { api } from '../../services/api';
 import { SimulationBadge } from '../Common/SimulationBadge';
@@ -42,7 +35,6 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
 
   // Totals calculated strictly in application code
   const totalAllocated = calculateTotalAllocated(categories);
-  const totalEstimated = calculateTotalEstimated(categories);
   const totalConfirmed = calculateTotalConfirmed(categories);
   const totalActual = calculateTotalActual(categories);
   const remainingBudget = calculateRemainingBudget(req.totalBudget, totalAllocated);
@@ -294,7 +286,7 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
             {formatCurrency(totalAllocated, req.currency)}
           </div>
           <div className="text-[11px] text-[#695A60] mt-1">
-            {percentAllocated}% of ceiling allocated
+            {percentAllocated}% allocated · {remainingBudget >= 0 ? `${formatCurrency(remainingBudget, req.currency)} buffer` : 'Over budget'}
           </div>
         </div>
 
@@ -595,6 +587,20 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
                   {reductionProposal.overview}
                 </div>
 
+                <div>
+                  <label htmlFor="priority-notes-input" className="block text-xs font-semibold text-[#2D112C] mb-1">
+                    Priority Guidelines (What to protect)
+                  </label>
+                  <input
+                    id="priority-notes-input"
+                    type="text"
+                    value={priorityNotes}
+                    onChange={(e) => setPriorityNotes(e.target.value)}
+                    placeholder="e.g., Preserve catering taste and venue quality"
+                    className="w-full text-xs bg-white border border-[#DDD3C5] rounded-lg p-2 text-[#2D112C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
+                  />
+                </div>
+
                 {/* Proposed Cuts with Checkboxes */}
                 <div>
                   <h4 className="text-xs font-bold text-[#2D112C] uppercase tracking-wider mb-2">
@@ -602,20 +608,9 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
                   </h4>
                   <div className="space-y-2">
                     {reductionProposal.proposedCuts.map((cut, idx) => (
-                      <div
+                      <label
                         key={idx}
-                        role="checkbox"
-                        tabIndex={0}
-                        aria-checked={!!cut.approved}
-                        aria-label={`Approve savings for ${cut.categoryName}`}
-                        onClick={() => toggleCutApproval(idx)}
-                        onKeyDown={(e) => {
-                          if (e.key === ' ' || e.key === 'Enter') {
-                            e.preventDefault();
-                            toggleCutApproval(idx);
-                          }
-                        }}
-                        className={`p-3 rounded-lg border transition-all cursor-pointer flex items-start justify-between gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C] ${
+                        className={`p-3 rounded-lg border transition-all cursor-pointer flex items-start justify-between gap-3 ${
                           cut.approved
                             ? 'bg-[#FFF9F6] border-[#F97356]/40'
                             : 'bg-white border-[#E5DDD2] opacity-60'
@@ -625,8 +620,9 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
                           <input
                             type="checkbox"
                             checked={!!cut.approved}
-                            onChange={() => {}}
-                            className="mt-0.5 accent-[#2D112C]"
+                            onChange={() => toggleCutApproval(idx)}
+                            aria-label={`Approve savings for ${cut.categoryName}`}
+                            className="mt-0.5 accent-[#2D112C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D112C]"
                           />
                           <div>
                             <div className="flex items-center gap-2">
@@ -656,7 +652,7 @@ export const BudgetOptimizerView: React.FC<BudgetOptimizerViewProps> = ({
                             {formatCurrency(cut.proposedAmount, req.currency)}
                           </div>
                         </div>
-                      </div>
+                      </label>
                     ))}
                   </div>
                 </div>

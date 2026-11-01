@@ -1,15 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  MessageSquare,
   Send,
   Sparkles,
   Bot,
   User,
-  RefreshCw,
   ArrowRight,
-  TrendingDown,
-  Store,
-  ShieldAlert,
 } from 'lucide-react';
 import { CopilotMessage, FestivoEvent } from '../../types';
 import { api } from '../../services/api';

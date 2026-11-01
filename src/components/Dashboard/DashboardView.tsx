@@ -3,7 +3,6 @@ import {
   Calendar,
   Users,
   Wallet,
-  Clock,
   CheckCircle2,
   AlertTriangle,
   ArrowRight,

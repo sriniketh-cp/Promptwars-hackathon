@@ -7,13 +7,11 @@ import {
   AlertCircle,
   Clock,
   Cpu,
-  ArrowRight,
   Copy,
   Check,
   ChevronDown,
   ChevronUp,
   Trash2,
-  ExternalLink,
   ShieldCheck,
   Terminal,
 } from 'lucide-react';
@@ -144,7 +142,7 @@ export const AIActivityPanel: React.FC<AIActivityPanelProps> = ({ isOpen, onClos
               </p>
             </div>
           ) : (
-            activities.map((item, idx) => {
+            activities.map((item) => {
               const isInputExpanded = expandedInputId === item.id;
               const isResponseExpanded = expandedResponseId === item.id;
 
@@ -338,7 +336,7 @@ export const AIActivityPanel: React.FC<AIActivityPanelProps> = ({ isOpen, onClos
 
                         {/* Structured Highlights */}
                         {(() => {
-                          const res = typeof item.response === 'object' && item.response !== null ? (item.response as Record<string, any>) : null;
+                          const res = typeof item.response === 'object' && item.response !== null ? (item.response as Record<string, unknown>) : null;
                           return (
                             <div className="p-2.5 bg-white text-[11px] text-[#4F3F46] border-t border-[#E5DDD2] space-y-1.5">
                               {res ? (
@@ -359,11 +357,11 @@ export const AIActivityPanel: React.FC<AIActivityPanelProps> = ({ isOpen, onClos
                                       </span>
                                     </div>
                                   )}
-                                  {res.blueprint?.summary && (
+                                  {Boolean(res.blueprint && typeof res.blueprint === 'object' && 'summary' in (res.blueprint as object)) && (
                                     <div className="text-[11px]">
                                       <strong className="text-[#2D112C]">Blueprint Summary:</strong>{' '}
                                       <span className="text-[#695A60] line-clamp-2">
-                                        {String(res.blueprint.summary)}
+                                        {String((res.blueprint as Record<string, unknown>).summary)}
                                       </span>
                                     </div>
                                   )}
